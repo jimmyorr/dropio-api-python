@@ -5,7 +5,6 @@ Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 """
 
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
-__version__ = '$Id$'
 
 from StringIO import StringIO
 import urllib
