@@ -31,9 +31,10 @@ class DropIoClient(object):
         
         base_params_dict = {}
         base_params_dict['api_key'] = self.__api_key
-        base_params_dict['token'] = self.__token 
         base_params_dict['version'] = API_VERSION
         base_params_dict['format'] = API_FORMAT
+        if token is not None:
+            base_params_dict['token'] = self.__token 
         self.__base_params = urllib.urlencode(base_params_dict)
     
     def __urlopen_get(self, base_url, params):
@@ -75,17 +76,17 @@ class DropIoClient(object):
             params_dict['name'] = drop_name
         params = self.__base_params + '&' + urllib.urlencode(params_dict)
             
-        url = BASE_URL + DROPS
+        url = API_BASE_URL + DROPS
         drop_dict = self.__urlopen_post(url, params)
         
-        d = Drop(drop_dict.get('url'),
+        d = Drop(drop_dict.get('name'),
                  drop_dict.get('email'),
                  drop_dict.get('voicemail'),
                  drop_dict.get('conference'),
                  drop_dict.get('fax_coverpage_url'),
                  drop_dict.get('rss'),
-                 'FIXME: where is asset count?')
-        return d        
+                 drop_dict.get('asset_count'))
+        return d
             
     def get_drop(self, drop_name):
         """
@@ -94,16 +95,16 @@ class DropIoClient(object):
         """
         assert drop_name is not None
         
-        url = BASE_URL + DROPS + drop_name
+        url = API_BASE_URL + DROPS + drop_name
         drop_dict = self.__urlopen_get(url, self.__base_params)
         
-        d = Drop(drop_dict.get('url'),
+        d = Drop(drop_dict.get('name'),
                  drop_dict.get('email'),
                  drop_dict.get('voicemail'),
                  drop_dict.get('conference'),
-                 drop_dict.get('fax_coverpage_url'),
+                 drop_dict.get('fax'),
                  drop_dict.get('rss'),
-                 'FIXME: where is asset count?')
+                 drop_dict.get('asset_count'))
         return d
 
 
@@ -119,16 +120,30 @@ class DropIoClient(object):
         assert drop_name is not None
         
         # TODO: paginate through asset list for > 30 assets
-        url = BASE_URL + drop_name + ASSETS
+        url = API_BASE_URL + DROPS + drop_name + ASSETS
         asset_dicts = self.__urlopen_get(url, self.__base_params)
         
         for asset_dict in asset_dicts:
-            a = Asset(asset_dict.get('url_fragment'),
-                      asset_dict.get('asset_type'),
+            a = Asset(asset_dict.get('name'),
+                      asset_dict.get('type'),
                       asset_dict.get('title'), 
                       asset_dict.get('description'),
-                      asset_dict.get('file_size'), 
+                      asset_dict.get('filesize'), 
                       asset_dict.get('created_at')                        
                       )
             yield a
+    
+    def create_link(self, drop_name, link_url):
+        assert drop_name is not None
+        assert link_url is not None
+                
+        params_dict = {}
+        params_dict['url'] = link_url
+        params = self.__base_params + '&' + urllib.urlencode(params_dict)
+        
+        url = API_BASE_URL + DROPS + drop_name + ASSETS
+        asset_dict = self.__urlopen_post(url, params)
+        
+        a = Asset(asset_dict.get('name')) # TODO: add additional params
+        return a
     
