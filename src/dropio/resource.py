@@ -42,13 +42,4 @@ class Asset(Resource):
         self.created_at = created_at
     
     def __str__(self):
-        return self.title
-
-# TODO: image, movie, audio, document, note, link, archive, and other
-class SubAsset(Asset):
-    def __init__(self):
-        # thumbnail=None, status=None, file=None, converted=None, 
-        # hidden_url=None, pages=None, duration=None, artist=None, 
-        # track_title=None, height=None, width=None, contents=None, 
-        # url=None
-        pass
+        return self.name
