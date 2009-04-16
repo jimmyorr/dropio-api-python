@@ -60,6 +60,25 @@ class DropIoClient(object):
         
         return json_decoded
     
+    def __map_drop(self, drop, dict):
+        drop.name = dict.get('name')
+        drop.email = dict.get('email')
+        drop.voicemail = dict.get('voicemail')
+        drop.conference = dict.get('conference')
+        drop.fax = dict.get('fax')
+        drop.rss = dict.get('rss')
+        drop.asset_count = dict.get('asset_count')
+        return
+    
+    def __map_asset(self, asset, dict):
+        asset.name = dict.get('name')
+        asset.type = dict.get('type')
+        asset.title = dict.get('title')
+        asset.description = dict.get('description')
+        asset.filesize = dict.get('filesize') 
+        asset.created_at = dict.get('created_at')
+        return
+    
     
     ################
     # DROP RESOURCE
@@ -79,14 +98,10 @@ class DropIoClient(object):
         url = API_BASE_URL + DROPS
         drop_dict = self.__urlopen_post(url, params)
         
-        d = Drop(drop_dict.get('name'),
-                 drop_dict.get('email'),
-                 drop_dict.get('voicemail'),
-                 drop_dict.get('conference'),
-                 drop_dict.get('fax_coverpage_url'),
-                 drop_dict.get('rss'),
-                 drop_dict.get('asset_count'))
-        return d
+        drop = Drop()
+        self.__map_drop(drop, drop_dict)
+        
+        return drop
             
     def get_drop(self, drop_name):
         """
@@ -98,14 +113,10 @@ class DropIoClient(object):
         url = API_BASE_URL + DROPS + drop_name
         drop_dict = self.__urlopen_get(url, self.__base_params)
         
-        d = Drop(drop_dict.get('name'),
-                 drop_dict.get('email'),
-                 drop_dict.get('voicemail'),
-                 drop_dict.get('conference'),
-                 drop_dict.get('fax'),
-                 drop_dict.get('rss'),
-                 drop_dict.get('asset_count'))
-        return d
+        drop = Drop()
+        self.__map_drop(drop, drop_dict)
+        
+        return drop
 
 
     #################
@@ -124,16 +135,15 @@ class DropIoClient(object):
         asset_dicts = self.__urlopen_get(url, self.__base_params)
         
         for asset_dict in asset_dicts:
-            a = Asset(asset_dict.get('name'),
-                      asset_dict.get('type'),
-                      asset_dict.get('title'), 
-                      asset_dict.get('description'),
-                      asset_dict.get('filesize'), 
-                      asset_dict.get('created_at')                        
-                      )
-            yield a
+            asset = Asset()
+            self.__map_asset(asset, asset_dict)
+            yield asset
     
     def create_link(self, drop_name, link_url):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
         assert drop_name is not None
         assert link_url is not None
                 
@@ -144,6 +154,8 @@ class DropIoClient(object):
         url = API_BASE_URL + DROPS + drop_name + ASSETS
         asset_dict = self.__urlopen_post(url, params)
         
-        a = Asset(asset_dict.get('name')) # TODO: add additional params
-        return a
+        asset = Asset()
+        self.__map_asset(asset, asset_dict)
+        
+        return asset
     
