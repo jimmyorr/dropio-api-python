@@ -43,3 +43,11 @@ class Asset(Resource):
     
     def __str__(self):
         return self.name
+
+
+class Link(Asset):
+    def __init__(self, name=None, type=None, title=None, description=None, 
+                 filesize=None, created_at=None, url=None):
+        Asset.__init__(self, name, type, title, description, filesize, created_at)
+        self.url = url
+    
