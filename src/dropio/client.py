@@ -10,7 +10,8 @@ from StringIO import StringIO
 import urllib
 import urllib2
 
-import simplejson as json
+try: import json
+except ImportError: import simplejson as json
 
 from resource import Asset, Drop
 
