@@ -9,6 +9,7 @@ __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 from StringIO import StringIO
 import urllib
 import urllib2
+import pycurl
 
 try: import json
 except ImportError: import simplejson as json
@@ -19,6 +20,7 @@ API_VERSION = '1.0'
 API_FORMAT = 'json'
 BASE_URL = 'http://drop.io/'
 API_BASE_URL = 'http://api.drop.io/'
+FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
 
 ASSETS = '/assets/'
 DROPS = 'drops/'
@@ -30,13 +32,13 @@ class DropIoClient(object):
         self.__api_key = api_key
         self.__token = token
         
-        base_params_dict = {}
-        base_params_dict['api_key'] = self.__api_key
-        base_params_dict['version'] = API_VERSION
-        base_params_dict['format'] = API_FORMAT
+        self.__base_params_dict = {}
+        self.__base_params_dict['api_key'] = self.__api_key
+        self.__base_params_dict['version'] = API_VERSION
+        self.__base_params_dict['format'] = API_FORMAT
         if token is not None:
-            base_params_dict['token'] = self.__token 
-        self.__base_params = urllib.urlencode(base_params_dict)
+            self.__base_params_dict['token'] = self.__token 
+        self.__base_params = urllib.urlencode(self.__base_params_dict)
     
     def __urlopen_get(self, base_url, params):
         try:
@@ -147,13 +149,41 @@ class DropIoClient(object):
         """
         assert drop_name is not None
         assert link_url is not None
-                
+        
         params_dict = {}
         params_dict['url'] = link_url
         params = self.__base_params + '&' + urllib.urlencode(params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
         asset_dict = self.__urlopen_post(url, params)
+        
+        asset = Asset()
+        self.__map_asset(asset, asset_dict)
+        
+        return asset
+    
+    def create_file(self, drop_name, file_name):
+        assert drop_name is not None
+        assert file_name is not None
+        
+        params_dict = {}
+        params_dict['drop_name'] = drop_name
+        params_dict['file'] = (pycurl.FORM_FILE, file_name)
+        params_dict.update(self.__base_params_dict)
+        
+        curl = pycurl.Curl()
+        buffer = StringIO()
+        
+        curl.setopt(pycurl.WRITEFUNCTION, buffer.write)
+        curl.setopt(pycurl.URL, FILE_UPLOAD_URL)
+        curl.setopt(pycurl.HTTPPOST, params_dict.items())    
+        
+        curl.perform()
+        curl.close()
+        
+        buffer.seek(0) # TODO: why is this needed?
+        asset_dict = json.load(buffer)
+        buffer.close()
         
         asset = Asset()
         self.__map_asset(asset, asset_dict)
