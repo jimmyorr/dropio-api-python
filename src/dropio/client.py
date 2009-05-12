@@ -17,6 +17,7 @@ from resource import Asset, Drop
 
 API_VERSION = '1.0'
 API_FORMAT = 'json'
+
 BASE_URL = 'http://drop.io/'
 API_BASE_URL = 'http://api.drop.io/'
 FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
@@ -111,7 +112,7 @@ class DropIoClient(object):
         self.__map_drop(drop, drop_dict)
         
         return drop
-            
+    
     def get_drop(self, drop_name):
         """
         Returns:
@@ -130,30 +131,27 @@ class DropIoClient(object):
         self.__map_drop(drop, drop_dict)
         
         return drop
-
-
+    
+    def update_drop(self, drop):
+        """
+        Returns:
+            dropio.resource.Drop
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def delete_drop(self, drop_name):
+        """
+        Returns:
+            ???
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    
     #################
     # ASSET RESOURCE
     #################
-    
-    def get_asset_list(self, drop_name):
-        """
-        Returns:
-            list of dropio.resource.Asset
-        """
-        assert drop_name is not None
-        
-        params_dict = {}
-        params_dict.update(self.__base_params_dict)
-        
-        # TODO: paginate through asset list for > 30 assets
-        url = API_BASE_URL + DROPS + drop_name + ASSETS
-        asset_dicts = self.__curl_get(url, params_dict)
-        
-        for asset_dict in asset_dicts:
-            asset = Asset()
-            self.__map_asset(asset, asset_dict)
-            yield asset
     
     def create_link(self, drop_name, link_url):
         """
@@ -174,6 +172,14 @@ class DropIoClient(object):
         self.__map_asset(asset, asset_dict)
         
         return asset
+    
+    def create_note(self, drop_name, contents, title=None):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
+        # TODO: implement me
+        raise NotImplementedError()
     
     def create_file(self, drop_name, file_name):
         """
@@ -196,3 +202,99 @@ class DropIoClient(object):
         
         return asset
     
+    def get_asset_list(self, drop_name):
+        """
+        Returns:
+            list of dropio.resource.Asset
+        """
+        assert drop_name is not None
+        
+        params_dict = {}
+        params_dict.update(self.__base_params_dict)
+        
+        # TODO: paginate through asset list for > 30 assets
+        url = API_BASE_URL + DROPS + drop_name + ASSETS
+        asset_dicts = self.__curl_get(url, params_dict)
+        
+        for asset_dict in asset_dicts:
+            asset = Asset()
+            self.__map_asset(asset, asset_dict)
+            yield asset
+    
+    def get_asset(self, drop_name, asset_name):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def update_asset(self, drop_name, asset):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def delete_asset(self, drop_name, asset_name):
+        """
+        Returns:
+            ???
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def send_asset(self, drop_name, asset_name, medium, 
+                   emails=None, fax_number=None):
+        """
+        Returns:
+            ???
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    
+    ###################
+    # COMMENT RESOURCE
+    ###################
+    
+    def get_comment_list(self, drop_name, asset_name):
+        """
+        Returns:
+            list of dropio.resource.Comment
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+
+    def create_comment(self, drop_name, asset_name, contents):
+        """
+        Returns:
+            dropio.resource.Comment
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def get_comment(self, drop_name, asset_name, comment_id):
+        """
+        Returns:
+            dropio.resource.Comment
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def update_comment(self, drop_name, asset_name, comment):
+        """
+        Returns:
+            dropio.resource.Comment
+        """
+        # TODO: implement me
+        raise NotImplementedError()
+    
+    def delete_comment(self, drop_name, asset_name, comment_id):
+        """
+        Returns:
+            ???
+        """
+        # TODO: implement me
+        raise NotImplementedError()
