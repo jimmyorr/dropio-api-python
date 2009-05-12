@@ -13,7 +13,7 @@ import pycurl
 try: import json
 except ImportError: import simplejson as json
 
-from resource import Asset, Drop
+from resource import Asset, Drop, Link
 
 API_VERSION = '1.0'
 API_FORMAT = 'json'
@@ -89,6 +89,10 @@ class DropIoClient(object):
         asset.created_at = dict.get('created_at')
         return
     
+    def __map_link(self, link, dict):
+        self.__map_asset(link, dict)
+        link.url = dict.get('url')
+        return
     
     ################
     # DROP RESOURCE
@@ -156,7 +160,7 @@ class DropIoClient(object):
     def create_link(self, drop_name, link_url):
         """
         Returns:
-            dropio.resource.Asset
+            dropio.resource.Link
         """
         assert drop_name is not None
         assert link_url is not None
@@ -166,12 +170,12 @@ class DropIoClient(object):
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
-        asset_dict = self.__curl_post(url, params_dict)
+        link_dict = self.__curl_post(url, params_dict)
         
-        asset = Asset()
-        self.__map_asset(asset, asset_dict)
+        link = Link()
+        self.__map_link(link, link_dict)
         
-        return asset
+        return link
     
     def create_note(self, drop_name, contents, title=None):
         """
