@@ -28,16 +28,12 @@ class DropIoClient(object):
     """Client for the Drop.io service."""
     
     def __init__(self, api_key, token=None):
-        self.__api_key = api_key
-        self.__token = token
-        
         self.__base_params_dict = {}
-        self.__base_params_dict['api_key'] = self.__api_key
+        self.__base_params_dict['api_key'] = api_key
         self.__base_params_dict['version'] = API_VERSION
         self.__base_params_dict['format'] = API_FORMAT
         if token is not None:
-            self.__base_params_dict['token'] = self.__token 
-        self.__base_params = urllib.urlencode(self.__base_params_dict)
+            self.__base_params_dict['token'] = token
     
     def __curl_get(self, base_url, params_dict):
         c = pycurl.Curl()
@@ -105,7 +101,7 @@ class DropIoClient(object):
         
         params_dict = {}
         if drop_name is not None:
-            params_dict['name'] = drop_name
+            params_dict['name'] = str(drop_name)
         params_dict.update(self.__base_params_dict)
             
         url = API_BASE_URL + DROPS
@@ -168,7 +164,7 @@ class DropIoClient(object):
         assert link_url is not None
         
         params_dict = {}
-        params_dict['url'] = link_url
+        params_dict['url'] = str(link_url)
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
@@ -188,7 +184,7 @@ class DropIoClient(object):
         assert file_name is not None
         
         params_dict = {}
-        params_dict['drop_name'] = drop_name
+        params_dict['drop_name'] = str(drop_name)
         params_dict['file'] = (pycurl.FORM_FILE, file_name)
         params_dict.update(self.__base_params_dict)
         
