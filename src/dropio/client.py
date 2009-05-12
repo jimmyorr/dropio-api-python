@@ -8,7 +8,6 @@ __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
 from StringIO import StringIO
 import urllib
-import urllib2
 import pycurl
 
 try: import json
@@ -40,26 +39,37 @@ class DropIoClient(object):
             self.__base_params_dict['token'] = self.__token 
         self.__base_params = urllib.urlencode(self.__base_params_dict)
     
-    def __urlopen_get(self, base_url, params):
-        try:
-            url = base_url + '?' + params
-            f = urllib2.urlopen(url)
-        except IOError:
-            raise
+    def __curl_get(self, base_url, params_dict):
+        c = pycurl.Curl()
+        buffer = StringIO()
+        url = base_url + '?' + urllib.urlencode(params_dict)
         
-        json_encoded = StringIO(f.read())
-        json_decoded = json.load(json_encoded)
+        c.setopt(pycurl.WRITEFUNCTION, buffer.write)
+        c.setopt(pycurl.URL, str(url))
+        
+        c.perform()
+        c.close()
+        
+        buffer.seek(0)
+        json_decoded = json.load(buffer)
+        buffer.close()
         
         return json_decoded
     
-    def __urlopen_post(self, url, params):
-        try:
-            f = urllib2.urlopen(url, params)
-        except IOError:
-            raise
+    def __curl_post(self, url, params_dict):
+        c = pycurl.Curl()
+        buffer = StringIO()
         
-        json_encoded = StringIO(f.read())
-        json_decoded = json.load(json_encoded)
+        c.setopt(pycurl.WRITEFUNCTION, buffer.write)
+        c.setopt(pycurl.URL, str(url))
+        c.setopt(pycurl.HTTPPOST, params_dict.items())
+        
+        c.perform()
+        c.close()
+        
+        buffer.seek(0)
+        json_decoded = json.load(buffer)
+        buffer.close()
         
         return json_decoded
     
@@ -96,10 +106,10 @@ class DropIoClient(object):
         params_dict = {}
         if drop_name is not None:
             params_dict['name'] = drop_name
-        params = self.__base_params + '&' + urllib.urlencode(params_dict)
+        params_dict.update(self.__base_params_dict)
             
         url = API_BASE_URL + DROPS
-        drop_dict = self.__urlopen_post(url, params)
+        drop_dict = self.__curl_post(url, params_dict)
         
         drop = Drop()
         self.__map_drop(drop, drop_dict)
@@ -114,7 +124,11 @@ class DropIoClient(object):
         assert drop_name is not None
         
         url = API_BASE_URL + DROPS + drop_name
-        drop_dict = self.__urlopen_get(url, self.__base_params)
+        
+        params_dict = {}
+        params_dict.update(self.__base_params_dict)
+        
+        drop_dict = self.__curl_get(url, params_dict)
         
         drop = Drop()
         self.__map_drop(drop, drop_dict)
@@ -133,9 +147,12 @@ class DropIoClient(object):
         """
         assert drop_name is not None
         
+        params_dict = {}
+        params_dict.update(self.__base_params_dict)
+        
         # TODO: paginate through asset list for > 30 assets
         url = API_BASE_URL + DROPS + drop_name + ASSETS
-        asset_dicts = self.__urlopen_get(url, self.__base_params)
+        asset_dicts = self.__curl_get(url, params_dict)
         
         for asset_dict in asset_dicts:
             asset = Asset()
@@ -152,10 +169,10 @@ class DropIoClient(object):
         
         params_dict = {}
         params_dict['url'] = link_url
-        params = self.__base_params + '&' + urllib.urlencode(params_dict)
+        params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
-        asset_dict = self.__urlopen_post(url, params)
+        asset_dict = self.__curl_post(url, params_dict)
         
         asset = Asset()
         self.__map_asset(asset, asset_dict)
@@ -163,6 +180,10 @@ class DropIoClient(object):
         return asset
     
     def create_file(self, drop_name, file_name):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
         assert drop_name is not None
         assert file_name is not None
         
@@ -171,19 +192,8 @@ class DropIoClient(object):
         params_dict['file'] = (pycurl.FORM_FILE, file_name)
         params_dict.update(self.__base_params_dict)
         
-        curl = pycurl.Curl()
-        buffer = StringIO()
-        
-        curl.setopt(pycurl.WRITEFUNCTION, buffer.write)
-        curl.setopt(pycurl.URL, FILE_UPLOAD_URL)
-        curl.setopt(pycurl.HTTPPOST, params_dict.items())    
-        
-        curl.perform()
-        curl.close()
-        
-        buffer.seek(0) # TODO: why is this needed?
-        asset_dict = json.load(buffer)
-        buffer.close()
+        url = FILE_UPLOAD_URL
+        asset_dict = self.__curl_post(url, params_dict)
         
         asset = Asset()
         self.__map_asset(asset, asset_dict)
