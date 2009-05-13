@@ -7,8 +7,9 @@ Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
 from StringIO import StringIO
-import urllib
+import os.path
 import pycurl
+import urllib
 
 try: import json
 except ImportError: import simplejson as json
@@ -192,6 +193,7 @@ class DropIoClient(object):
         """
         assert drop_name is not None
         assert file_name is not None
+        assert os.path.isfile(file_name) is True
         
         params_dict = {}
         params_dict['drop_name'] = str(drop_name)
