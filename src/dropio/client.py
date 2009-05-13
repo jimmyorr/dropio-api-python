@@ -195,7 +195,7 @@ class DropIoClient(object):
         
         params_dict = {}
         params_dict['drop_name'] = str(drop_name)
-        params_dict['file'] = (pycurl.FORM_FILE, file_name)
+        params_dict['file'] = (pycurl.FORM_FILE, str(file_name))
         params_dict.update(self.__base_params_dict)
         
         url = FILE_UPLOAD_URL
