@@ -12,45 +12,54 @@ class Resource(object):
 
 
 class Drop(Resource):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, drop_dict={}):
+        assert drop_dict is not None
+        
         Resource.__init__(self)
-        self.name = kwargs.get('name')
-        self.email = kwargs.get('email')
-        self.voicemail = kwargs.get('voicemail')
-        self.conference = kwargs.get('conference')
-        self.fax = kwargs.get('fax')
-        self.rss = kwargs.get('rss')
-        self.asset_count = kwargs.get('asset_count')
-        self.guest_token = kwargs.get('guest_token')
-        self.admin_token = kwargs.get('admin_token')
-        self.expiration_length = kwargs.get('expiration_length')
-        self.guests_can_comment = kwargs.get('guests_can_comment')
-        self.guests_can_add = kwargs.get('guests_can_add')
-        self.guests_can_delete = kwargs.get('guests_can_delete')
-        self.max_bytes = kwargs.get('max_bytes')
-        self.current_bytes = kwargs.get('current_bytes')
-        self.hidden_upload_url = kwargs.get('hidden_upload_url')
+        
+        self.name = drop_dict.get('name')
+        self.email = drop_dict.get('email')
+        self.voicemail = drop_dict.get('voicemail')
+        self.conference = drop_dict.get('conference')
+        self.fax = drop_dict.get('fax')
+        self.rss = drop_dict.get('rss')
+        self.asset_count = drop_dict.get('asset_count')
+        self.guest_token = drop_dict.get('guest_token')
+        self.admin_token = drop_dict.get('admin_token')
+        self.expiration_length = drop_dict.get('expiration_length')
+        self.guests_can_comment = drop_dict.get('guests_can_comment')
+        self.guests_can_add = drop_dict.get('guests_can_add')
+        self.guests_can_delete = drop_dict.get('guests_can_delete')
+        self.max_bytes = drop_dict.get('max_bytes')
+        self.current_bytes = drop_dict.get('current_bytes')
+        self.hidden_upload_url = drop_dict.get('hidden_upload_url')
     
     def __str__(self):
         return self.name
 
 
 class Asset(Resource):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, asset_dict={}):
+        assert asset_dict is not None
+        
         Resource.__init__(self)
-        self.name = kwargs.get('name')
-        self.type = kwargs.get('type')
-        self.title = kwargs.get('title')
-        self.description = kwargs.get('description')
-        self.filesize = kwargs.get('filesize')
-        self.created_at = kwargs.get('created_at')
+        
+        self.name = asset_dict.get('name')
+        self.type = asset_dict.get('type')
+        self.title = asset_dict.get('title')
+        self.description = asset_dict.get('description')
+        self.filesize = asset_dict.get('filesize')
+        self.created_at = asset_dict.get('created_at')
     
     def __str__(self):
         return self.name
 
 
 class Link(Asset):
-    def __init__(self, *args, **kwargs):
-        Asset.__init__(self, args, kwargs)
-        self.url = kwargs.get('url')
+    def __init__(self, link_dict={}):
+        assert link_dict is not None
+        
+        Asset.__init__(self, link_dict)
+        
+        self.url = link_dict.get('url')
     
