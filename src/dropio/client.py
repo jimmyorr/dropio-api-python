@@ -19,7 +19,6 @@ from resource import Asset, Drop, Link
 API_VERSION = '1.0'
 API_FORMAT = 'json'
 
-BASE_URL = 'http://drop.io/'
 API_BASE_URL = 'http://api.drop.io/'
 FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
 
@@ -29,13 +28,11 @@ DROPS = 'drops/'
 class DropIoClient(object):
     """Client for the Drop.io service."""
     
-    def __init__(self, api_key, token=None):
+    def __init__(self, api_key):
         self.__base_params_dict = {}
         self.__base_params_dict['api_key'] = api_key
         self.__base_params_dict['version'] = API_VERSION
         self.__base_params_dict['format'] = API_FORMAT
-        if token is not None:
-            self.__base_params_dict['token'] = token
     
     def __curl_get(self, base_url, params_dict):
         c = pycurl.Curl()
@@ -118,7 +115,7 @@ class DropIoClient(object):
         
         return drop
     
-    def get_drop(self, drop_name):
+    def get_drop(self, drop_name, token=None):
         """
         Returns:
             dropio.resource.Drop
@@ -128,6 +125,8 @@ class DropIoClient(object):
         url = API_BASE_URL + DROPS + drop_name
         
         params_dict = {}
+        if token is not None:
+            params_dict['token'] = str(token)
         params_dict.update(self.__base_params_dict)
         
         drop_dict = self.__curl_get(url, params_dict)
@@ -137,7 +136,7 @@ class DropIoClient(object):
         
         return drop
     
-    def update_drop(self, drop):
+    def update_drop(self, drop, token=None):
         """
         Returns:
             dropio.resource.Drop
@@ -145,7 +144,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def delete_drop(self, drop_name):
+    def delete_drop(self, drop_name, token):
         """
         Returns:
             ???
@@ -158,7 +157,7 @@ class DropIoClient(object):
     # ASSET RESOURCE
     #################
     
-    def create_link(self, drop_name, link_url):
+    def create_link(self, drop_name, link_url, token=None):
         """
         Returns:
             dropio.resource.Link
@@ -168,6 +167,8 @@ class DropIoClient(object):
         
         params_dict = {}
         params_dict['url'] = str(link_url)
+        if token is not None:
+            params_dict['token'] = str(token)
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
@@ -178,7 +179,7 @@ class DropIoClient(object):
         
         return link
     
-    def create_note(self, drop_name, contents, title=None):
+    def create_note(self, drop_name, contents, title=None, token=None):
         """
         Returns:
             dropio.resource.Asset
@@ -186,7 +187,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def create_file(self, drop_name, file_name):
+    def create_file(self, drop_name, file_name, token=None):
         """
         Returns:
             dropio.resource.Asset
@@ -198,6 +199,8 @@ class DropIoClient(object):
         params_dict = {}
         params_dict['drop_name'] = str(drop_name)
         params_dict['file'] = (pycurl.FORM_FILE, str(file_name))
+        if token is not None:
+            params_dict['token'] = str(token)
         params_dict.update(self.__base_params_dict)
         
         url = FILE_UPLOAD_URL
@@ -208,7 +211,7 @@ class DropIoClient(object):
         
         return asset
     
-    def get_asset_list(self, drop_name):
+    def get_asset_list(self, drop_name, token=None):
         """
         Returns:
             list of dropio.resource.Asset
@@ -216,6 +219,8 @@ class DropIoClient(object):
         assert drop_name is not None
         
         params_dict = {}
+        if token is not None:
+            params_dict['token'] = str(token)
         params_dict.update(self.__base_params_dict)
         
         # TODO: paginate through asset list for > 30 assets
@@ -227,7 +232,7 @@ class DropIoClient(object):
             self.__map_asset(asset, asset_dict)
             yield asset
     
-    def get_asset(self, drop_name, asset_name):
+    def get_asset(self, drop_name, asset_name, token=None):
         """
         Returns:
             dropio.resource.Asset
@@ -235,7 +240,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def update_asset(self, drop_name, asset):
+    def update_asset(self, drop_name, asset, token=None):
         """
         Returns:
             dropio.resource.Asset
@@ -243,7 +248,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def delete_asset(self, drop_name, asset_name):
+    def delete_asset(self, drop_name, asset_name, token=None):
         """
         Returns:
             ???
@@ -252,7 +257,7 @@ class DropIoClient(object):
         raise NotImplementedError()
     
     def send_asset(self, drop_name, asset_name, medium, 
-                   emails=None, fax_number=None):
+                   emails=None, fax_number=None, token=None):
         """
         Returns:
             ???
@@ -265,7 +270,7 @@ class DropIoClient(object):
     # COMMENT RESOURCE
     ###################
     
-    def get_comment_list(self, drop_name, asset_name):
+    def get_comment_list(self, drop_name, asset_name, token=None):
         """
         Returns:
             list of dropio.resource.Comment
@@ -273,7 +278,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
 
-    def create_comment(self, drop_name, asset_name, contents):
+    def create_comment(self, drop_name, asset_name, contents, token=None):
         """
         Returns:
             dropio.resource.Comment
@@ -281,7 +286,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def get_comment(self, drop_name, asset_name, comment_id):
+    def get_comment(self, drop_name, asset_name, comment_id, token=None):
         """
         Returns:
             dropio.resource.Comment
@@ -289,7 +294,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def update_comment(self, drop_name, asset_name, comment):
+    def update_comment(self, drop_name, asset_name, comment, token):
         """
         Returns:
             dropio.resource.Comment
@@ -297,7 +302,7 @@ class DropIoClient(object):
         # TODO: implement me
         raise NotImplementedError()
     
-    def delete_comment(self, drop_name, asset_name, comment_id):
+    def delete_comment(self, drop_name, asset_name, comment_id, token):
         """
         Returns:
             ???
