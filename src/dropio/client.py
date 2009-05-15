@@ -8,9 +8,10 @@ __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
 from StringIO import StringIO
 import os.path
-import pycurl
+import re
 import urllib
 
+import pycurl
 try: import json
 except ImportError: import simplejson as json
 
@@ -22,8 +23,9 @@ API_FORMAT = 'json'
 API_BASE_URL = 'http://api.drop.io/'
 FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
 
-ASSETS = '/assets/'
 DROPS = 'drops/'
+ASSETS = '/assets/'
+COMMENTS = '/comments/'
 
 class DropIoClient(object):
     """Client for the Drop.io service."""
@@ -34,63 +36,81 @@ class DropIoClient(object):
         self.__base_params_dict['version'] = API_VERSION
         self.__base_params_dict['format'] = API_FORMAT
     
+    def __parse_headers(self, headers_str):
+        cookies_dict = {}
+        headers_dict = {}
+        
+        lines = re.split('\r?\n', headers_str)
+        for line in lines:
+            try:
+                name, value = line.split(': ', 1)
+                if 'Set-Cookie' == name:
+                    match = re.search('^([^=]+)=([^;]+)*', value)
+                    if match:
+                        cookies_dict[match.group(1)] = match.group(2)
+                else:
+                    headers_dict[name] = value
+            except ValueError:
+                pass
+        
+        return headers_dict
+    
     def __curl_get(self, base_url, params_dict):
         c = pycurl.Curl()
-        buffer = StringIO()
+        headers = StringIO()
+        body = StringIO()
         url = base_url + '?' + urllib.urlencode(params_dict)
         
-        c.setopt(pycurl.WRITEFUNCTION, buffer.write)
+        c.setopt(pycurl.HEADERFUNCTION, headers.write)
+        c.setopt(pycurl.WRITEFUNCTION, body.write)
         c.setopt(pycurl.URL, str(url))
         
         c.perform()
         c.close()
         
-        buffer.seek(0)
-        json_decoded = json.load(buffer)
-        buffer.close()
+        headers.seek(0)
+        headers_dict = self.__parse_headers(headers.read())
+        headers.close()
         
-        return json_decoded
+        body.seek(0)
+        body_dict = json.load(body)
+        body.close()
+        
+        if headers_dict.get('Status') != '200 OK':
+            response_dict = body_dict.get('response')
+            if response_dict and getattr(response_dict, 'get'):
+                raise RuntimeError(response_dict.get('message'))
+        
+        return body_dict
     
     def __curl_post(self, url, params_dict):
         c = pycurl.Curl()
-        buffer = StringIO()
+        headers = StringIO()
+        body = StringIO()
         
-        c.setopt(pycurl.WRITEFUNCTION, buffer.write)
+        c.setopt(pycurl.HEADERFUNCTION, headers.write)
+        c.setopt(pycurl.WRITEFUNCTION, body.write)
         c.setopt(pycurl.URL, str(url))
         c.setopt(pycurl.HTTPPOST, params_dict.items())
         
         c.perform()
         c.close()
         
-        buffer.seek(0)
-        json_decoded = json.load(buffer)
-        buffer.close()
+        headers.seek(0)
+        headers_dict = self.__parse_headers(headers.read())
+        headers.close()
         
-        return json_decoded
+        body.seek(0)
+        body_dict = json.load(body)
+        body.close()
+        
+        if headers_dict.get('Status') != '200 OK':
+            response_dict = body_dict.get('response')
+            if response_dict and getattr(response_dict, 'get'):
+                raise RuntimeError(response_dict.get('message'))
+        
+        return body_dict
     
-    def __map_drop(self, drop, dict):
-        drop.name = dict.get('name')
-        drop.email = dict.get('email')
-        drop.voicemail = dict.get('voicemail')
-        drop.conference = dict.get('conference')
-        drop.fax = dict.get('fax')
-        drop.rss = dict.get('rss')
-        drop.asset_count = dict.get('asset_count')
-        return
-    
-    def __map_asset(self, asset, dict):
-        asset.name = dict.get('name')
-        asset.type = dict.get('type')
-        asset.title = dict.get('title')
-        asset.description = dict.get('description')
-        asset.filesize = dict.get('filesize') 
-        asset.created_at = dict.get('created_at')
-        return
-    
-    def __map_link(self, link, dict):
-        self.__map_asset(link, dict)
-        link.url = dict.get('url')
-        return
     
     ################
     # DROP RESOURCE
@@ -109,9 +129,7 @@ class DropIoClient(object):
             
         url = API_BASE_URL + DROPS
         drop_dict = self.__curl_post(url, params_dict)
-        
-        drop = Drop()
-        self.__map_drop(drop, drop_dict)
+        drop = Drop(drop_dict)
         
         return drop
     
@@ -122,21 +140,18 @@ class DropIoClient(object):
         """
         assert drop_name is not None
         
-        url = API_BASE_URL + DROPS + drop_name
-        
         params_dict = {}
         if token is not None:
             params_dict['token'] = str(token)
         params_dict.update(self.__base_params_dict)
         
+        url = API_BASE_URL + DROPS + drop_name
         drop_dict = self.__curl_get(url, params_dict)
-        
-        drop = Drop()
-        self.__map_drop(drop, drop_dict)
+        drop = Drop(drop_dict)
         
         return drop
     
-    def update_drop(self, drop, token=None):
+    def update_drop(self, drop, token):
         """
         Returns:
             dropio.resource.Drop
@@ -173,9 +188,7 @@ class DropIoClient(object):
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
         link_dict = self.__curl_post(url, params_dict)
-        
-        link = Link()
-        self.__map_link(link, link_dict)
+        link = Link(link_dict)
         
         return link
     
@@ -206,8 +219,7 @@ class DropIoClient(object):
         url = FILE_UPLOAD_URL
         asset_dict = self.__curl_post(url, params_dict)
         
-        asset = Asset()
-        self.__map_asset(asset, asset_dict)
+        asset = Asset(asset_dict)
         
         return asset
     
@@ -228,9 +240,7 @@ class DropIoClient(object):
         asset_dicts = self.__curl_get(url, params_dict)
         
         for asset_dict in asset_dicts:
-            asset = Asset()
-            self.__map_asset(asset, asset_dict)
-            yield asset
+            yield Asset(asset_dict)
     
     def get_asset(self, drop_name, asset_name, token=None):
         """
