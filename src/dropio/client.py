@@ -27,6 +27,7 @@ FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
 DROPS = 'drops/'
 ASSETS = '/assets/'
 COMMENTS = '/comments/'
+SEND_TO = '/send_to'
 
 DROP_NAME_PATTERN = '^[a-zA-Z0-9_]+$'
 
@@ -75,9 +76,9 @@ class DropIoClient(object):
         opener.close()
         return body_dict
     
-    # TODO: wish there was a better way to do this...preferably without curl
     def __curl_post(self, url, params_dict):
-        def __parse_headers(self, headers_str):
+        # TODO: wish there was a better way to do this...preferably without curl
+        def __parse_headers(headers_str):
             cookies_dict = {}
             headers_dict = {}
             
@@ -109,7 +110,7 @@ class DropIoClient(object):
         c.close()
         
         headers.seek(0)
-        headers_dict = self.__parse_headers(headers.read())
+        headers_dict = __parse_headers(headers.read())
         headers.close()
         
         body.seek(0)
@@ -126,6 +127,18 @@ class DropIoClient(object):
     def __check_drop_name(self, drop_name):
         # TODO: throw more specific exception
         assert re.search(DROP_NAME_PATTERN, drop_name) is not None
+    
+    def __asset_dict_to_asset(self, asset_dict):
+        # TODO: this isn't ideal...
+        asset = None
+        if asset_dict.has_key('contents'):
+            asset = Note(asset_dict)
+        elif asset_dict.has_key('url'):
+            asset = Link(asset_dict)
+        else:
+            asset = Asset(asset_dict)
+        return asset
+    
     
     ################
     # DROP RESOURCE
@@ -171,7 +184,7 @@ class DropIoClient(object):
     def update_drop(self, drop, token):
         """
         Returns:
-            TODO: ???
+            dropio.resource.Drop
         """
         assert drop is not None
         assert token is not None
@@ -193,15 +206,12 @@ class DropIoClient(object):
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop.name
-        self.__put(url, params_dict)
+        drop_dict = self.__put(url, params_dict)
+        drop = Drop(drop_dict)
         
-        return
+        return drop
     
     def delete_drop(self, drop_name, token):
-        """
-        Returns:
-            TODO: ???
-        """
         assert drop_name is not None
         assert token is not None
         
@@ -283,7 +293,6 @@ class DropIoClient(object):
         
         url = FILE_UPLOAD_URL
         asset_dict = self.__curl_post(url, params_dict)
-        
         asset = Asset(asset_dict)
         
         return asset
@@ -322,13 +331,7 @@ class DropIoClient(object):
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS + asset_name
         asset_dict = self.__get(url, params_dict)
-        # TODO: this isn't ideal...
-        if asset_dict.has_key('contents'):
-            asset = Note(asset_dict)
-        elif asset_dict.has_key('url'):
-            asset = Link(asset_dict)
-        else:
-            asset = Asset(asset_dict)
+        asset = self.__asset_dict_to_asset(asset_dict)
         
         return asset
     
@@ -354,15 +357,12 @@ class DropIoClient(object):
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS + asset.name
-        self.__put(url, params_dict)
+        asset_dict = self.__put(url, params_dict)
+        asset = self.__asset_dict_to_asset(asset_dict)
         
-        return
+        return asset
     
     def delete_asset(self, drop_name, asset_name, token=None):
-        """
-        Returns:
-            TODO: ???
-        """
         assert drop_name is not None
         assert asset_name is not None
         
@@ -376,14 +376,48 @@ class DropIoClient(object):
         
         return
     
-    def send_asset(self, drop_name, asset_name, medium, 
-                   emails=None, fax_number=None, token=None):
-        """
-        Returns:
-            ???
-        """
-        # TODO: implement me
-        raise NotImplementedError()
+    def __send_asset(self, drop_name, asset_name, medium, params_dict, token=None):
+        assert drop_name is not None
+        assert asset_name is not None
+        
+        params_dict['medium'] = medium
+        if token is not None:
+            params_dict['token'] = token
+        params_dict.update(self.__base_params_dict)
+        
+        url = API_BASE_URL + DROPS + drop_name + ASSETS + asset_name + SEND_TO
+        self.__post(url, params_dict)
+        
+        return
+    
+    def send_asset_to_fax(self, drop_name, asset_name, fax_number, token=None):
+        assert fax_number is not None
+        
+        params_dict = {}
+        params_dict['fax_number'] = fax_number
+        self.__send_asset(drop_name, asset_name, 'fax', params_dict, token)
+        
+        return
+        
+    def send_asset_to_drop(self, drop_name, asset_name, drop_name_dest, token=None):
+        assert drop_name_dest is not None
+        
+        params_dict = {}
+        params_dict['drop_name'] = drop_name_dest
+        self.__send_asset(drop_name, asset_name, 'drop', params_dict, token)
+        
+        return
+        
+    def send_asset_to_email(self, drop_name, asset_name, emails, message=None, token=None):
+        assert emails is not None
+        
+        params_dict = {}
+        params_dict['emails'] = emails
+        if message is not None:
+            params_dict['message'] = message
+        self.__send_asset(drop_name, asset_name, 'email', params_dict, token)
+        
+        return
     
     
     ###################

@@ -2,6 +2,7 @@
 
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
+import os
 import unittest
 import urllib2
 
@@ -9,7 +10,7 @@ import dropio.client
 
 api_key = ''
 valid_drop_name = ''
-invalid_drop_name = '$$$'
+invalid_drop_name = 'foo bar!'
 
 class DropIoClientUnitTest(unittest.TestCase):
     
@@ -40,20 +41,19 @@ class DropIoClientUnitTest(unittest.TestCase):
         self.assertRaises(Exception, self.client.get_drop, '')
     
     
-    ################
+    ###############
     # update_drop()
-    ################
-    # FIXME: this is returning HTTPError: HTTP Error 500: Internal Server Error
-#===============================================================================
-#    def test_update_drop(self):
-#        drop = self.client.create_drop()
-#        self.assert_(drop is not None)
-#        self.assertEquals(drop.guests_can_delete, True)
-#        drop.guests_can_delete = False
-#        self.client.update_drop(drop, drop.admin_token)
-#        updated_drop = self.client.get_drop(drop.name, drop.admin_token)
-#        self.assertEquals(updated_drop.guests_can_delete, False)
-#===============================================================================
+    ###############
+    def test_update_drop(self):
+        # FIXME: this is returning HTTPError: HTTP Error 500: Internal Server Error
+        return
+        drop = self.client.create_drop()
+        self.assert_(drop is not None)
+        self.assertEquals(drop.guests_can_delete, True)
+        drop.guests_can_delete = False
+        self.client.update_drop(drop, drop.admin_token)
+        updated_drop = self.client.get_drop(drop.name, drop.admin_token)
+        self.assertEquals(updated_drop.guests_can_delete, False)
     
     
     ################
@@ -89,6 +89,35 @@ class DropIoClientUnitTest(unittest.TestCase):
         self.assertEquals(note.contents, note_contents)
     
     
+    ################
+    # create_file()
+    ################
+    
+    def test_create_file(self):
+        file_name = 'test_create_file.txt'
+        file_handle = open(file_name, 'w')
+        file_handle.write('0123456789abcdef')
+        file_handle.close()
+        
+        file = self.client.create_file(valid_drop_name, file_name)
+        self.assert_(file is not None)
+        self.assertEquals(file.filesize, os.stat(file_name).st_size)
+        self.assertEquals(file.title, os.path.basename(file_name))
+        
+        os.remove(file_name)
+    
+    
+    ###################
+    # get_asset_list()
+    ###################
+    
+    def test_get_asset_list(self):
+        drop = self.client.get_drop(valid_drop_name)
+        self.assert_(drop is not None)
+        assets = self.client.get_asset_list(valid_drop_name)
+        self.assert_(assets is not None)
+    
+    
     ##############
     # get_asset()
     ##############
@@ -114,7 +143,10 @@ class DropIoClientUnitTest(unittest.TestCase):
         link.url = 'http://bar.com'
         link.title = 'this is a title'
         link.description = 'this is a description'
-        self.client.update_asset(valid_drop_name, link)
+        updated_link = self.client.update_asset(valid_drop_name, link)
+        self.assertEquals(updated_link.url, link.url)
+        self.assertEquals(updated_link.title, link.title)
+        self.assertEquals(updated_link.description, link.description)
         
         
     #################
@@ -127,9 +159,23 @@ class DropIoClientUnitTest(unittest.TestCase):
         self.assert_(note is not None)
         self.assertEquals(note.contents, note_contents)
         self.client.delete_asset(valid_drop_name, note.name)
+    
+    
+    ###############
+    # send_asset()
+    ###############
+    
+    def test_send_asset_to_email(self):
+        link_url = 'http://foo.com'
+        link = self.client.create_link(valid_drop_name, link_url)
+        self.assert_(link is not None)
+        
+        self.client.send_asset_to_email(valid_drop_name, link.name, 
+                                        'M8R-nn8jli@mailinator.com', 
+                                        'hello world')
 
 
 if __name__ == '__main__':
-    #unittest.main(DropIoClientUnitTest, 'test_update_drop')
+    #unittest.main(DropIoClientUnitTest, 'test_send_asset_to_email')
     unittest.main()
     
