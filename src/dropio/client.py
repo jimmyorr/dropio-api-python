@@ -29,8 +29,6 @@ ASSETS = '/assets/'
 COMMENTS = '/comments/'
 SEND_TO = '/send_to'
 
-DROP_NAME_PATTERN = '^[a-zA-Z0-9_]+$'
-
 class DropIoClient(object):
     """Client for the Drop.io service."""
     
@@ -124,10 +122,6 @@ class DropIoClient(object):
         
         return body_dict
     
-    def __check_drop_name(self, drop_name):
-        # TODO: throw more specific exception
-        assert re.search(DROP_NAME_PATTERN, drop_name) is not None
-    
     def __asset_dict_to_asset(self, asset_dict):
         # TODO: this isn't ideal...
         asset = None
@@ -149,8 +143,6 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Drop
         """
-        if drop_name is not None:
-            self.__check_drop_name(drop_name)
         
         params_dict = {}
         if drop_name is not None:
