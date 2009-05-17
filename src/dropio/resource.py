@@ -33,6 +33,9 @@ class Drop(Resource):
         self.max_bytes = drop_dict.get('max_bytes')
         self.current_bytes = drop_dict.get('current_bytes')
         self.hidden_upload_url = drop_dict.get('hidden_upload_url')
+        
+        self.password = drop_dict.get('password')
+        self.admin_password = drop_dict.get('admin_password')
     
     def __str__(self):
         return self.name
@@ -62,4 +65,13 @@ class Link(Asset):
         Asset.__init__(self, link_dict)
         
         self.url = link_dict.get('url')
+    
+
+class Note(Asset):
+    def __init__(self, note_dict={}):
+        assert note_dict is not None
+        
+        Asset.__init__(self, note_dict)
+        
+        self.contents = note_dict.get('contents')
     
