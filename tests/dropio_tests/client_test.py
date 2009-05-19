@@ -8,14 +8,12 @@ import urllib2
 
 import dropio.client
 
-api_key = ''
-valid_drop_name = ''
-invalid_drop_name = 'foo bar!'
+valid_drop_name = 'api_python_test'
 
 class DropIoClientUnitTest(unittest.TestCase):
     
     def setUp(self):
-        self.client = dropio.client.DropIoClient(api_key)
+        self.client = dropio.client.DropIoClient(os.getenv('DROPIO_API_KEY'))
     
     def tearDown(self):
         # No teardown needed
@@ -32,7 +30,7 @@ class DropIoClientUnitTest(unittest.TestCase):
         self.assertEquals(drop.name, valid_drop_name)
     
     def test_get_drop_invalid_drop_name(self):
-        self.assertRaises(Exception, self.client.get_drop, invalid_drop_name)
+        self.assertRaises(Exception, self.client.get_drop, '#$!')
         
     def test_get_drop_None_drop_name(self):
         self.assertRaises(Exception, self.client.get_drop, None)
@@ -176,6 +174,6 @@ class DropIoClientUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #unittest.main(DropIoClientUnitTest, 'test_send_asset_to_email')
+    #unittest.main(DropIoClientUnitTest, 'test_get_drop_valid_drop_name')
     unittest.main()
     
