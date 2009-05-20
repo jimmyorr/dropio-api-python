@@ -54,12 +54,13 @@ class DropIoClient(object):
     
     def __post_multipart(self, url, params_dict, file_params_dict):
         """
-        http://code.activestate.com/recipes/146306/
+        Based on http://code.activestate.com/recipes/146306/
         
         Post fields and files to an http host as multipart/form-data.
-        fields is a sequence of (name, value) elements for regular form fields.
-        files is a sequence of (name, filename, value) elements for data to be uploaded as files
-        Return the server's response page.
+        params_dict is a dict of {key:value} elements for regular form fields.
+        file_params_dict is a dict of {key:file_name} elements for data to be 
+          uploaded as files.
+        Return the server's decoded json response.
         """
         def encode_multipart_formdata(fields, files):
             """
