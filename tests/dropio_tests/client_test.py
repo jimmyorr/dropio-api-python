@@ -43,8 +43,6 @@ class DropIoClientUnitTest(unittest.TestCase):
     # update_drop()
     ###############
     def test_update_drop(self):
-        # FIXME: this is returning HTTPError: HTTP Error 500: Internal Server Error
-        return
         drop = self.client.create_drop()
         self.assert_(drop is not None)
         self.assertEquals(drop.guests_can_delete, True)
@@ -174,6 +172,6 @@ class DropIoClientUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #unittest.main(DropIoClientUnitTest, 'test_get_drop_valid_drop_name')
+    #unittest.main(DropIoClientUnitTest, 'test_update_drop')
     unittest.main()
     

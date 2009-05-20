@@ -184,11 +184,11 @@ class DropIoClient(object):
         params_dict = {}
         params_dict['token'] = token
         if drop.guests_can_comment is not None:
-            params_dict['guests_can_comment'] = drop.guests_can_comment
+            params_dict['guests_can_comment'] = str.lower(str(drop.guests_can_comment))
         if drop.guests_can_add is not None:
-            params_dict['guests_can_add'] = drop.guests_can_add
+            params_dict['guests_can_add'] = str.lower(str(drop.guests_can_add))
         if drop.guests_can_delete is not None:
-            params_dict['guests_can_delete'] = drop.guests_can_delete
+            params_dict['guests_can_delete'] = str.lower(str(drop.guests_can_delete))
         if drop.expiration_length is not None:
             params_dict['expiration_length'] = drop.expiration_length
         if drop.password is not None:
