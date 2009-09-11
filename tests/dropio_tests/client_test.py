@@ -20,6 +20,15 @@ class DropIoClientUnitTest(unittest.TestCase):
         pass
     
     
+    ################
+    # create_drop()
+    ################
+    
+    def test_create_drop(self):
+        drop = self.client.create_drop()
+        self.assert_(drop is not None)
+    
+    
     #############
     # get_drop()
     #############
@@ -42,6 +51,7 @@ class DropIoClientUnitTest(unittest.TestCase):
     ###############
     # update_drop()
     ###############
+    
     def test_update_drop(self):
         drop = self.client.create_drop()
         self.assert_(drop is not None)
@@ -110,9 +120,32 @@ class DropIoClientUnitTest(unittest.TestCase):
     def test_get_asset_list(self):
         drop = self.client.get_drop(valid_drop_name)
         self.assert_(drop is not None)
-        assets = self.client.get_asset_list(valid_drop_name)
+        assets = self.client.get_asset_list(drop.name)
         self.assert_(assets is not None)
     
+    
+    #######################
+    # get_all_asset_list()
+    #######################
+    
+    def test_get_all_asset_list(self):
+        drop = self.client.create_drop()
+        self.assert_(drop is not None)
+        
+        for ii in range(0,31):
+            note_contents = ii
+            self.client.create_note(drop.name, note_contents)
+        
+        drop = self.client.get_drop(drop.name)
+        self.assert_(drop is not None)
+        
+        assets = self.client.get_all_asset_list(drop.name)
+        self.assert_(assets is not None)
+        
+        count = 0
+        for asset in assets: #@UnusedVariable
+            count += 1
+        self.assert_(count == 31)
     
     ##############
     # get_asset()
@@ -172,6 +205,6 @@ class DropIoClientUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #unittest.main(DropIoClientUnitTest, 'test_update_drop')
+    #unittest.main(DropIoClientUnitTest, 'test_get_all_asset_list')
     unittest.main()
     

@@ -285,37 +285,57 @@ class DropIoClient(object):
         
         params_dict = {}
         params_dict['drop_name'] = drop_name
-        #params_dict['file'] = (pycurl.FORM_FILE, file_name)
         if token is not None:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
         url = FILE_UPLOAD_URL
         
-        #asset_dict = self.__curl_post(url, params_dict)
         asset_dict = self.__post_multipart(url, params_dict, {'file':file_name})
         asset = Asset(asset_dict)
         
         return asset
     
-    def get_asset_list(self, drop_name, token=None):
+    def get_asset_list(self, drop_name, page=1, token=None):
         """
         Returns:
-            list of dropio.resource.Asset
+            generator of dropio.resource.Asset
         """
         assert drop_name is not None
         
         params_dict = {}
+        params_dict['page'] = page
         if token is not None:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        # TODO: paginate through asset list for > 30 assets
         url = API_BASE_URL + DROPS + drop_name + ASSETS
         asset_dicts = self.__get(url, params_dict)
         
         for asset_dict in asset_dicts:
             yield Asset(asset_dict)
+        
+        return
+    
+    def get_all_asset_list(self, drop_name, token=None):
+        """
+        Returns:
+            generator of dropio.resource.Asset
+        """
+        assert drop_name is not None
+        
+        page = 1
+        while True:
+            assets = self.get_asset_list(drop_name, page, token)
+            empty = True
+            for asset in assets:
+                yield asset
+                empty = False
+            if empty:
+                break
+            page += 1
+        
+        return
     
     def get_asset(self, drop_name, asset_name, token=None):
         """
