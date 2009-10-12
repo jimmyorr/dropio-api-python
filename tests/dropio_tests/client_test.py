@@ -10,7 +10,7 @@ import dropio.client
 
 valid_drop_name = 'api_python_test'
 
-class DropIoClientUnitTest(unittest.TestCase):
+class DropIoClientTestCase(unittest.TestCase):
     
     def setUp(self):
         self.client = dropio.client.DropIoClient(os.getenv('DROPIO_API_KEY'))
@@ -101,6 +101,19 @@ class DropIoClientUnitTest(unittest.TestCase):
     
     def test_create_file(self):
         file_name = 'test_create_file.txt'
+        file_handle = open(file_name, 'w')
+        file_handle.write('0123456789abcdef')
+        file_handle.close()
+        
+        file = self.client.create_file(valid_drop_name, file_name)
+        self.assert_(file is not None)
+        self.assertEquals(file.filesize, os.stat(file_name).st_size)
+        self.assertEquals(file.title, os.path.basename(file_name))
+        
+        os.remove(file_name)
+    
+    def test_create_file_that_starts_with_r(self):
+        file_name = '.\\r_test_create_file_that_starts_with_r.txt'
         file_handle = open(file_name, 'w')
         file_handle.write('0123456789abcdef')
         file_handle.close()
@@ -205,6 +218,10 @@ class DropIoClientUnitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #unittest.main(DropIoClientUnitTest, 'test_get_all_asset_list')
-    unittest.main()
+    #suite = unittest.TestSuite()
+    #suite.addTest(DropIoClientTestCase('test_create_file_that_starts_with_r'))
+    
+    suite = unittest.TestLoader().loadTestsFromTestCase(DropIoClientTestCase)
+    
+    unittest.TextTestRunner(verbosity=2).run(suite)
     
