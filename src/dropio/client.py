@@ -8,6 +8,7 @@ __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
 import httplib
 import mimetypes
+import mimetools
 import os.path
 import urllib
 import urllib2
@@ -52,58 +53,42 @@ class DropIoClient(object):
         f.close()
         return body_dict
     
-    def __post_multipart(self, url, params_dict, file_params_dict):
-        """
-        Based on http://code.activestate.com/recipes/146306/
-        
-        Post fields and files to an http host as multipart/form-data.
-        params_dict is a dict of {key:value} elements for regular form fields.
-        file_params_dict is a dict of {key:file_name} elements for data to be 
-          uploaded as files.
-        Return the server's decoded json response.
-        """
-        def encode_multipart_formdata(fields, files):
-            """
-            fields is a sequence of (name, value) elements for regular form fields.
-            files is a sequence of (name, filename) elements for data to be uploaded as files
-            Return (content_type, body) ready for httplib.HTTP instance
-            """
-            BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-            CRLF = '\r\n'
-            L = []
-            for (key, value) in fields:
-                L.append('--' + BOUNDARY)
-                L.append('Content-Disposition: form-data; name="%s"' % key)
-                L.append('')
-                L.append(value)
-            for (key, file_name) in files:
-                L.append('--' + BOUNDARY)
-                L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, file_name))
-                L.append('Content-Type: %s' % get_content_type(file_name))
-                L.append('')
-                f = open(file_name, 'rb')
-                L.append(f.read())
-                f.close()
-            L.append('--' + BOUNDARY + '--')
-            L.append('')
-            body = CRLF.join(L)
+    def __post_multipart(self, url, params_dict):
+        def encode_multipart_formdata(params_dict):
+            BOUNDARY = mimetools.choose_boundary()
+            
+            body = ''
+            
+            for key, value in params_dict.iteritems():
+                if isinstance(value, tuple):
+                    filename, value = value
+                    body += '--%s\r\n' % BOUNDARY
+                    body += 'Content-Disposition: form-data;'
+                    body += 'name="%s";' % str(key)
+                    body += 'filename="%s"\r\n' % str(filename)
+                    body += 'Content-Type: %s\r\n\r\n' % str(get_content_type(filename))
+                    body += '%s\r\n' % str(value)
+                else:
+                    body += '--%s\r\n' % BOUNDARY
+                    body += 'Content-Disposition: form-data; name="%s"\r\n\r\n' % str(key)
+                    body += '%s\r\n' % str(value)
+            
+            body += '--%s--\r\n' % BOUNDARY
             content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-            return content_type, body
+        
+            return body, content_type
         
         def get_content_type(filename):
             return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
         
-        content_type, body = encode_multipart_formdata(params_dict.items(), 
-                                                       file_params_dict.items())
+        body, content_type = encode_multipart_formdata(params_dict)
+        headers = {'content-type': content_type}
+        
         url_parts = urlsplit(url)
-        h = httplib.HTTP(url_parts[1])
-        h.putrequest('POST', url_parts[2])
-        h.putheader('content-type', content_type)
-        h.putheader('content-length', str(len(body)))
-        h.endheaders()
-        h.send(body)
-        h.getreply()
-        body_dict = json.load(h.file)
+        h = httplib.HTTPConnection(url_parts.netloc)
+        h.request('POST', url_parts.path, body, headers)
+        response = h.getresponse()
+        body_dict = json.load(response)
         h.close()
         return body_dict
     
@@ -287,11 +272,14 @@ class DropIoClient(object):
         params_dict['drop_name'] = drop_name
         if token is not None:
             params_dict['token'] = token
+        input = open(file_name, 'rb')
+        params_dict['file'] = (file_name, input.read())
+        input.close()
         params_dict.update(self.__base_params_dict)
         
         url = FILE_UPLOAD_URL
         
-        asset_dict = self.__post_multipart(url, params_dict, {'file':file_name})
+        asset_dict = self.__post_multipart(url, params_dict)
         asset = Asset(asset_dict)
         
         return asset
