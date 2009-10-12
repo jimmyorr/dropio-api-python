@@ -81,7 +81,7 @@ class DropIoClient(object):
                 L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, file_name))
                 L.append('Content-Type: %s' % get_content_type(file_name))
                 L.append('')
-                f = open(file_name)
+                f = open(file_name, 'rb')
                 L.append(f.read())
                 f.close()
             L.append('--' + BOUNDARY + '--')
