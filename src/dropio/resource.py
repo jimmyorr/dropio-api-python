@@ -12,7 +12,7 @@ class Resource(object):
 
 
 class Drop(Resource):
-    def __init__(self, drop_dict={}):
+    def __init__(self, drop_dict):
         assert drop_dict is not None
         
         Resource.__init__(self)
@@ -42,7 +42,7 @@ class Drop(Resource):
 
 
 class Asset(Resource):
-    def __init__(self, asset_dict={}):
+    def __init__(self, asset_dict):
         assert asset_dict is not None
         
         Resource.__init__(self)
@@ -59,7 +59,7 @@ class Asset(Resource):
 
 
 class Link(Asset):
-    def __init__(self, link_dict={}):
+    def __init__(self, link_dict):
         assert link_dict is not None
         
         Asset.__init__(self, link_dict)
@@ -68,7 +68,7 @@ class Link(Asset):
     
 
 class Note(Asset):
-    def __init__(self, note_dict={}):
+    def __init__(self, note_dict):
         assert note_dict is not None
         
         Asset.__init__(self, note_dict)
