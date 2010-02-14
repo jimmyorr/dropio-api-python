@@ -19,7 +19,7 @@ except ImportError: import simplejson as json
 
 from dropio.resource import Asset, Drop, Link, Note
 
-API_VERSION = '1.0'
+API_VERSION = '2.0'
 API_FORMAT = 'json'
 
 API_BASE_URL = 'http://api.drop.io/'
@@ -298,9 +298,9 @@ class DropIoClient(object):
         params_dict.update(self.__base_params_dict)
         
         url = API_BASE_URL + DROPS + drop_name + ASSETS
-        asset_dicts = self.__get(url, params_dict)
+        response = self.__get(url, params_dict)
         
-        for asset_dict in asset_dicts:
+        for asset_dict in response['assets']:
             yield Asset(asset_dict)
         
         return

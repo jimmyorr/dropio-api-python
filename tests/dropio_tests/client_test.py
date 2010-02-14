@@ -145,7 +145,9 @@ class DropIoClientTestCase(unittest.TestCase):
         drop = self.client.create_drop()
         self.assert_(drop is not None)
         
-        for ii in range(0,31):
+        NUMBER_OF_NOTES = 31
+        
+        for ii in range(0, NUMBER_OF_NOTES):
             note_contents = ii
             self.client.create_note(drop.name, note_contents)
         
@@ -158,7 +160,7 @@ class DropIoClientTestCase(unittest.TestCase):
         count = 0
         for asset in assets: #@UnusedVariable
             count += 1
-        self.assert_(count == 31)
+        self.assert_(count == NUMBER_OF_NOTES)
     
     ##############
     # get_asset()
@@ -213,13 +215,13 @@ class DropIoClientTestCase(unittest.TestCase):
         self.assert_(link is not None)
         
         self.client.send_asset_to_email(valid_drop_name, link.name, 
-                                        'M8R-nn8jli@mailinator.com', 
+                                        valid_drop_name + '@drop.io', 
                                         'hello world')
 
 
 if __name__ == '__main__':
     #suite = unittest.TestSuite()
-    #suite.addTest(DropIoClientTestCase('test_create_file_that_starts_with_r'))
+    #suite.addTest(DropIoClientTestCase('test_send_asset_to_email'))
     
     suite = unittest.TestLoader().loadTestsFromTestCase(DropIoClientTestCase)
     
