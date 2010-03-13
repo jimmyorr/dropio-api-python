@@ -7,6 +7,7 @@ Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 
 import httplib
+import logging
 import mimetypes
 import mimetools
 import os.path
@@ -19,25 +20,96 @@ except ImportError: import simplejson as json
 
 from dropio.resource import Asset, Drop, Link, Note
 
-API_VERSION = '2.0'
-API_FORMAT = 'json'
+_API_VERSION = '2.0'
+_API_FORMAT = 'json'
 
-API_BASE_URL = 'http://api.drop.io/'
-FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
+_API_BASE_URL = 'http://api.drop.io/'
+_FILE_UPLOAD_URL = 'http://assets.drop.io/upload'
 
-DROPS = 'drops/'
-ASSETS = '/assets/'
-COMMENTS = '/comments/'
-SEND_TO = '/send_to'
+_DROPS = 'drops/'
+_ASSETS = '/assets/'
+_COMMENTS = '/comments/'
+_SEND_TO = '/send_to'
+
+_DROPIO_TRUE = 'true'
+_DROPIO_FALSE = 'false'
+
+
+#########################################################################
+# HTTP ERRORS: from http://dev.drop.io/rest-api-reference/response-codes/
+#########################################################################
+
+# TODO: consider having these inherit from urllib2.HTTPError
+
+class Error(Exception):
+    pass
+
+class BadRequestError(Error):
+    """400 Bad Request
+    Something is wrong with the request in general (i.e. missing parameters, 
+    bad data, etc). 
+    """
+    pass
+
+class InternalServerError(Error):
+    """500 Internal Server Error
+    Something that [drop.io] did not account for has gone wrong.
+    """
+    pass
+
+class ForbiddenError(Error):
+    """403 Forbidden
+    You did not supply a valid API token or an authorization token.
+    """ 
+    pass
+
+class ResourceNotFoundError(Error):
+    """404 Not Found
+    The resource requested is not found or not available.
+    """
+    pass
+
+
+class ExpirationLengthEnum(object):
+    ONE_DAY_FROM_NOW = '1_DAY_FROM_NOW'
+    ONE_WEEK_FROM_NOW = '1_WEEK_FROM_NOW'
+    ONE_MONTH_FROM_NOW = '1_MONTH_FROM_NOW'
+    ONE_YEAR_FROM_NOW = '1_YEAR_FROM_NOW'
+    ONE_DAY_FROM_LAST_VIEW = '1_DAY_FROM_LAST_VIEW'
+    ONE_WEEK_FROM_LAST_VIEW = '1_WEEK_FROM_LAST_VIEW'
+    ONE_MONTH_FROM_LAST_VIEW = '1_MONTH_FROM_LAST_VIEW'
+    ONE_YEAR_FROM_LAST_VIEW = '1_YEAR_FROM_LAST_VIEW'
+    
+    valid_expiration_lengths = frozenset((ONE_DAY_FROM_NOW,
+                                          ONE_WEEK_FROM_NOW,
+                                          ONE_MONTH_FROM_NOW,
+                                          ONE_YEAR_FROM_NOW,
+                                          ONE_DAY_FROM_LAST_VIEW,
+                                          ONE_WEEK_FROM_LAST_VIEW,
+                                          ONE_MONTH_FROM_LAST_VIEW,
+                                          ONE_YEAR_FROM_LAST_VIEW))
+
+
+class _NullHandler(logging.Handler):
+    """default logger does nothing"""
+    def emit(self, record):
+        pass
+
 
 class DropIoClient(object):
     """Client for the Drop.io service."""
     
-    def __init__(self, api_key):
+    def __init__(self, api_key, logger=None):
         self.__base_params_dict = {}
         self.__base_params_dict['api_key'] = api_key
-        self.__base_params_dict['version'] = API_VERSION
-        self.__base_params_dict['format'] = API_FORMAT
+        self.__base_params_dict['version'] = _API_VERSION
+        self.__base_params_dict['format'] = _API_FORMAT
+        if logger:
+            self.logger = logger
+        else:
+            h = _NullHandler()
+            self.logger = logging.getLogger()
+            self.logger.addHandler(h)
     
     def __get(self, base_url, params_dict):
         params = urllib.urlencode(params_dict)
@@ -141,7 +213,7 @@ class DropIoClient(object):
             params_dict['name'] = drop_name
         params_dict.update(self.__base_params_dict)
             
-        url = API_BASE_URL + DROPS
+        url = _API_BASE_URL + _DROPS
         drop_dict = self.__post(url, params_dict)
         drop = Drop(drop_dict)
         
@@ -159,8 +231,21 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name
-        drop_dict = self.__get(url, params_dict)
+        url = _API_BASE_URL + _DROPS + drop_name
+        try:
+            drop_dict = self.__get(url, params_dict)
+        except urllib2.HTTPError, e:
+            # TODO: move this into reusable method
+            if e.code == 400:
+                raise BadRequestError()
+            elif e.code == 403:
+                raise ForbiddenError()
+            if e.code == 404:
+                raise ResourceNotFoundError()
+            if e.code == 500:
+                raise ResourceNotFoundError()
+            else:
+                raise e
         drop = Drop(drop_dict)
         
         return drop
@@ -176,11 +261,20 @@ class DropIoClient(object):
         params_dict = {}
         params_dict['token'] = token
         if drop.guests_can_comment is not None:
-            params_dict['guests_can_comment'] = str.lower(str(drop.guests_can_comment))
+            if drop.guests_can_comment:
+                params_dict['guests_can_comment'] = _DROPIO_TRUE
+            else:
+                params_dict['guests_can_comment'] = _DROPIO_FALSE
         if drop.guests_can_add is not None:
-            params_dict['guests_can_add'] = str.lower(str(drop.guests_can_add))
+            if drop.guests_can_add:
+                params_dict['guests_can_add'] = _DROPIO_TRUE
+            else:
+                params_dict['guests_can_add'] = _DROPIO_FALSE
         if drop.guests_can_delete is not None:
-            params_dict['guests_can_delete'] = str.lower(str(drop.guests_can_delete))
+            if drop.guests_can_delete:
+                params_dict['guests_can_delete'] = _DROPIO_TRUE
+            else:
+                params_dict['guests_can_delete'] = _DROPIO_FALSE
         if drop.expiration_length is not None:
             params_dict['expiration_length'] = drop.expiration_length
         if drop.password is not None:
@@ -189,7 +283,7 @@ class DropIoClient(object):
             params_dict['admin_password'] = drop.admin_password
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop.name
+        url = _API_BASE_URL + _DROPS + drop.name
         drop_dict = self.__put(url, params_dict)
         drop = Drop(drop_dict)
         
@@ -203,7 +297,7 @@ class DropIoClient(object):
         params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name
+        url = _API_BASE_URL + _DROPS + drop_name
         self.__delete(url, params_dict)
         
         return
@@ -231,7 +325,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS
         link_dict = self.__post(url, params_dict)
         link = Link(link_dict)
         
@@ -253,7 +347,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS
         note_dict = self.__post(url, params_dict)
         note = Note(note_dict)
         
@@ -277,7 +371,7 @@ class DropIoClient(object):
         input.close()
         params_dict.update(self.__base_params_dict)
         
-        url = FILE_UPLOAD_URL
+        url = _FILE_UPLOAD_URL
         
         asset_dict = self.__post_multipart(url, params_dict)
         asset = Asset(asset_dict)
@@ -297,7 +391,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS
         response = self.__get(url, params_dict)
         
         for asset_dict in response['assets']:
@@ -338,7 +432,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS + asset_name
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS + asset_name
         asset_dict = self.__get(url, params_dict)
         asset = self.__asset_dict_to_asset(asset_dict)
         
@@ -365,7 +459,7 @@ class DropIoClient(object):
             params_dict['contents'] = asset.contents
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS + asset.name
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS + asset.name
         asset_dict = self.__put(url, params_dict)
         asset = self.__asset_dict_to_asset(asset_dict)
         
@@ -380,7 +474,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS + asset_name
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS + asset_name
         self.__delete(url, params_dict)
         
         return
@@ -394,7 +488,7 @@ class DropIoClient(object):
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
-        url = API_BASE_URL + DROPS + drop_name + ASSETS + asset_name + SEND_TO
+        url = _API_BASE_URL + _DROPS + drop_name + _ASSETS + asset_name + _SEND_TO
         self.__post(url, params_dict)
         
         return

@@ -6,14 +6,14 @@ import os
 import unittest
 import urllib2
 
-import dropio.client
+from dropio.client import *
 
-valid_drop_name = 'api_python_test'
+VALID_DROP_NAME = 'api_python_test'
 
 class DropIoClientTestCase(unittest.TestCase):
     
     def setUp(self):
-        self.client = dropio.client.DropIoClient(os.getenv('DROPIO_API_KEY'))
+        self.client = DropIoClient(os.getenv('DROPIO_API_KEY'))
     
     def tearDown(self):
         # No teardown needed
@@ -34,18 +34,18 @@ class DropIoClientTestCase(unittest.TestCase):
     #############
     
     def test_get_drop_valid_drop_name(self):
-        drop = self.client.get_drop(valid_drop_name)
+        drop = self.client.get_drop(VALID_DROP_NAME)
         self.assert_(drop is not None)
-        self.assertEquals(drop.name, valid_drop_name)
+        self.assertEquals(drop.name, VALID_DROP_NAME)
     
     def test_get_drop_invalid_drop_name(self):
-        self.assertRaises(Exception, self.client.get_drop, '#$!')
-        
+        self.assertRaises(ForbiddenError, self.client.get_drop, '!@#$%^&')
+    
     def test_get_drop_None_drop_name(self):
-        self.assertRaises(Exception, self.client.get_drop, None)
-        
+        self.assertRaises(AssertionError, self.client.get_drop, None)
+    
     def test_get_drop_empty_drop_name(self):
-        self.assertRaises(Exception, self.client.get_drop, '')
+        self.assertRaises(ResourceNotFoundError, self.client.get_drop, '')
     
     
     ###############
@@ -56,10 +56,13 @@ class DropIoClientTestCase(unittest.TestCase):
         drop = self.client.create_drop()
         self.assert_(drop is not None)
         self.assertEquals(drop.guests_can_delete, True)
+        self.assertEquals(drop.expiration_length, ExpirationLengthEnum.ONE_WEEK_FROM_LAST_VIEW)
         drop.guests_can_delete = False
+        drop.expiration_length = ExpirationLengthEnum.ONE_MONTH_FROM_NOW
         self.client.update_drop(drop, drop.admin_token)
         updated_drop = self.client.get_drop(drop.name, drop.admin_token)
         self.assertEquals(updated_drop.guests_can_delete, False)
+        self.assertEquals(drop.expiration_length, ExpirationLengthEnum.ONE_MONTH_FROM_NOW)
     
     
     ################
@@ -70,7 +73,7 @@ class DropIoClientTestCase(unittest.TestCase):
         drop = self.client.create_drop()
         self.assert_(drop is not None)
         self.client.delete_drop(drop.name, drop.admin_token)
-        self.assertRaises(urllib2.HTTPError, self.client.get_drop, drop.name, drop.admin_token)
+        self.assertRaises(ResourceNotFoundError, self.client.get_drop, drop.name, drop.admin_token)
     
     
     ################
@@ -79,7 +82,7 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_create_link(self):
         link_url = 'http://foo.com'
-        link = self.client.create_link(valid_drop_name, link_url)
+        link = self.client.create_link(VALID_DROP_NAME, link_url)
         self.assert_(link is not None)
         self.assertEquals(link.url, link_url)
     
@@ -90,7 +93,7 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_create_note(self):
         note_contents = 'blah blah blah'
-        note = self.client.create_note(valid_drop_name, note_contents)
+        note = self.client.create_note(VALID_DROP_NAME, note_contents)
         self.assert_(note is not None)
         self.assertEquals(note.contents, note_contents)
     
@@ -105,7 +108,7 @@ class DropIoClientTestCase(unittest.TestCase):
         file_handle.write('0123456789abcdef')
         file_handle.close()
         
-        file = self.client.create_file(valid_drop_name, file_name)
+        file = self.client.create_file(VALID_DROP_NAME, file_name)
         self.assert_(file is not None)
         self.assertEquals(file.filesize, os.stat(file_name).st_size)
         self.assertEquals(file.title, os.path.basename(file_name))
@@ -118,7 +121,7 @@ class DropIoClientTestCase(unittest.TestCase):
         file_handle.write('0123456789abcdef')
         file_handle.close()
         
-        file = self.client.create_file(valid_drop_name, file_name)
+        file = self.client.create_file(VALID_DROP_NAME, file_name)
         self.assert_(file is not None)
         self.assertEquals(file.filesize, os.stat(file_name).st_size)
         self.assertEquals(file.title, os.path.basename(file_name))
@@ -131,7 +134,7 @@ class DropIoClientTestCase(unittest.TestCase):
     ###################
     
     def test_get_asset_list(self):
-        drop = self.client.get_drop(valid_drop_name)
+        drop = self.client.get_drop(VALID_DROP_NAME)
         self.assert_(drop is not None)
         assets = self.client.get_asset_list(drop.name)
         self.assert_(assets is not None)
@@ -168,10 +171,10 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_get_asset(self):
         note_contents = 'blah blah blah'
-        note = self.client.create_note(valid_drop_name, note_contents)
+        note = self.client.create_note(VALID_DROP_NAME, note_contents)
         self.assert_(note is not None)
         self.assertEquals(note.contents, note_contents)
-        note = self.client.get_asset(valid_drop_name, note.name)
+        note = self.client.get_asset(VALID_DROP_NAME, note.name)
         self.assert_(note is not None)
         self.assertEquals(note.contents, note_contents)
     
@@ -182,12 +185,12 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_update_link(self):
         link_url = 'http://foo.com'
-        link = self.client.create_link(valid_drop_name, link_url)
+        link = self.client.create_link(VALID_DROP_NAME, link_url)
         self.assert_(link is not None)
         link.url = 'http://bar.com'
         link.title = 'this is a title'
         link.description = 'this is a description'
-        updated_link = self.client.update_asset(valid_drop_name, link)
+        updated_link = self.client.update_asset(VALID_DROP_NAME, link)
         self.assertEquals(updated_link.url, link.url)
         self.assertEquals(updated_link.title, link.title)
         self.assertEquals(updated_link.description, link.description)
@@ -199,10 +202,10 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_delete_note(self):
         note_contents = 'this note should be deleted'
-        note = self.client.create_note(valid_drop_name, note_contents)
+        note = self.client.create_note(VALID_DROP_NAME, note_contents)
         self.assert_(note is not None)
         self.assertEquals(note.contents, note_contents)
-        self.client.delete_asset(valid_drop_name, note.name)
+        self.client.delete_asset(VALID_DROP_NAME, note.name)
     
     
     ###############
@@ -211,17 +214,17 @@ class DropIoClientTestCase(unittest.TestCase):
     
     def test_send_asset_to_email(self):
         link_url = 'http://foo.com'
-        link = self.client.create_link(valid_drop_name, link_url)
+        link = self.client.create_link(VALID_DROP_NAME, link_url)
         self.assert_(link is not None)
         
-        self.client.send_asset_to_email(valid_drop_name, link.name, 
-                                        valid_drop_name + '@drop.io', 
+        self.client.send_asset_to_email(VALID_DROP_NAME, link.name, 
+                                        VALID_DROP_NAME + '@drop.io', 
                                         'hello world')
 
 
 if __name__ == '__main__':
     #suite = unittest.TestSuite()
-    #suite.addTest(DropIoClientTestCase('test_send_asset_to_email'))
+    #suite.addTest(DropIoClientTestCase('test_update_drop'))
     
     suite = unittest.TestLoader().loadTestsFromTestCase(DropIoClientTestCase)
     

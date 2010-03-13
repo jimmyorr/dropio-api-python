@@ -18,6 +18,7 @@ class Drop(Resource):
         Resource.__init__(self)
         
         self.name = drop_dict.get('name')
+        self.description = drop_dict.get('description')
         self.email = drop_dict.get('email')
         self.voicemail = drop_dict.get('voicemail')
         self.conference = drop_dict.get('conference')
