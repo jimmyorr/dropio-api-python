@@ -5,14 +5,17 @@ Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 """
 
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
+__version__ = '0.1'
 
 import httplib
 import logging
 import mimetypes
 import mimetools
 import os.path
+import sys
 import urllib
 import urllib2
+from optparse import OptionParser
 from urlparse import urlsplit
 
 try: import json
@@ -566,3 +569,61 @@ class DropIoClient(object):
         """
         # TODO: implement me
         raise NotImplementedError()
+
+
+def main(argv=None):
+    usage = "usage: %prog [options]"
+    parser = OptionParser(usage, version="%prog " + __version__)
+    
+    parser.add_option("-k", "--key", 
+                      action="store", dest="api_key",
+                      help="REQUIRED! get key from http://api.drop.io/")
+    parser.add_option("-v", "--verbose", 
+                      action="count", dest="verbosity", default=0)
+    parser.add_option("-d", "--drop_name", 
+                      action="store", dest="drop_name",
+                      metavar="DROP")
+    parser.add_option("-t", "--token",
+                      action="store", dest="token")
+    parser.add_option("-f", "--file", 
+                      action="append", dest="files_to_create", default=[],
+                      metavar="FILE")
+    parser.add_option("-l", "--link",
+                      action="append", dest="links_to_create", default=[],
+                      metavar="LINK")
+    parser.add_option("-n", "--note",
+                      action="append", dest="notes_to_create", default=[],
+                      metavar="NOTE")
+    (options, unused_args) = parser.parse_args()
+    
+    assert options.api_key is not None
+    
+    logger = logging.getLogger()
+    logging_level = logging.WARNING - (options.verbosity * 10)
+    logger.setLevel(logging_level)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging_level)
+    logger.addHandler(ch)
+    
+    client = DropIoClient(options.api_key, logger)
+    
+    try:
+        drop = client.get_drop(options.drop_name, options.token)
+    except Exception: # TODO: fix diaper anti-pattern
+        drop = client.create_drop(options.drop_name)
+    
+    for file_to_create in options.files_to_create:
+        logger.info("Adding file %s to drop %s" % (file_to_create, drop.name))
+        client.create_file(drop.name, file_to_create, options.token)
+    
+    for link_to_create in options.links_to_create:
+        logger.info("Adding link '%s' to drop %s" % (link_to_create, drop.name))
+        client.create_link(drop.name, link_to_create, options.token)
+    
+    for note_to_create in options.notes_to_create:
+        logger.info("Adding %s to drop %s" % (note_to_create, drop.name))
+        client.create_note(drop.name, note_to_create, options.token)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
