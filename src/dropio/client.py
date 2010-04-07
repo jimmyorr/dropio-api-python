@@ -15,6 +15,7 @@ import os.path
 import sys
 import urllib
 import urllib2
+import uuid
 from optparse import OptionParser
 from urlparse import urlsplit
 
@@ -356,6 +357,31 @@ class DropIoClient(object):
         
         return note
     
+    def create_file_from_readable(self, drop_name, readable, file_name=None, token=None):
+        """
+        Returns:
+            dropio.resource.Asset
+        """
+        assert drop_name is not None
+        assert hasattr(readable, 'read')
+        
+        if not file_name:
+            file_name = str(uuid.uuid4())
+        
+        params_dict = {}
+        params_dict['drop_name'] = drop_name
+        if token is not None:
+            params_dict['token'] = token
+        params_dict['file'] = (file_name, readable.read())
+        params_dict.update(self.__base_params_dict)
+        
+        url = _FILE_UPLOAD_URL
+        
+        asset_dict = self.__post_multipart(url, params_dict)
+        asset = Asset(asset_dict)
+        
+        return asset
+    
     def create_file(self, drop_name, file_name, token=None):
         """
         Returns:
@@ -365,19 +391,9 @@ class DropIoClient(object):
         assert file_name is not None
         assert os.path.isfile(file_name) is True
         
-        params_dict = {}
-        params_dict['drop_name'] = drop_name
-        if token is not None:
-            params_dict['token'] = token
         input = open(file_name, 'rb')
-        params_dict['file'] = (file_name, input.read())
+        asset = self.create_file_from_readable(drop_name, input, file_name, token)
         input.close()
-        params_dict.update(self.__base_params_dict)
-        
-        url = _FILE_UPLOAD_URL
-        
-        asset_dict = self.__post_multipart(url, params_dict)
-        asset = Asset(asset_dict)
         
         return asset
     
@@ -587,7 +603,8 @@ def main(argv=None):
                       action="store", dest="token")
     parser.add_option("-f", "--file", 
                       action="append", dest="files_to_create", default=[],
-                      metavar="FILE")
+                      metavar="FILE",
+                      help="Use a single dash '-' to read from stdin")
     parser.add_option("-l", "--link",
                       action="append", dest="links_to_create", default=[],
                       metavar="LINK")
@@ -614,7 +631,10 @@ def main(argv=None):
     
     for file_to_create in options.files_to_create:
         logger.info("Adding file %s to drop %s" % (file_to_create, drop.name))
-        client.create_file(drop.name, file_to_create, options.token)
+        if file_to_create == '-':
+            client.create_file_from_readable(drop.name, sys.stdin, token=options.token)
+        else:
+            client.create_file(drop.name, file_to_create, options.token)
     
     for link_to_create in options.links_to_create:
         logger.info("Adding link '%s' to drop %s" % (link_to_create, drop.name))
