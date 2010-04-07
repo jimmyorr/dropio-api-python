@@ -47,6 +47,14 @@ class DropIoClientTestCase(unittest.TestCase):
     def test_get_drop_empty_drop_name(self):
         self.assertRaises(ResourceNotFoundError, self.client.get_drop, '')
     
+#    def test_get_drop_unauthorized(self):
+#        drop = self.client.create_drop()
+#        drop.admin_password = 'password'
+#        drop = self.client.update_drop(drop, drop.admin_token)
+#        drop = self.client.get_drop(drop.name)
+#        TODO: admin_password does not get set by update_drop!
+#        self.assertRaises(ForbiddenError, self.client.get_drop, drop.name)
+    
     
     ###############
     # update_drop()
@@ -116,7 +124,7 @@ class DropIoClientTestCase(unittest.TestCase):
         os.remove(file_name)
     
     def test_create_file_that_starts_with_r(self):
-        file_name = '.\\r_test_create_file_that_starts_with_r.txt'
+        file_name = 'r_test_create_file_that_starts_with_r.txt'
         file_handle = open(file_name, 'w')
         file_handle.write('0123456789abcdef')
         file_handle.close()
@@ -224,7 +232,7 @@ class DropIoClientTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     #suite = unittest.TestSuite()
-    #suite.addTest(DropIoClientTestCase('test_update_drop'))
+    #suite.addTest(DropIoClientTestCase('test_create_file_that_starts_with_r'))
     
     suite = unittest.TestLoader().loadTestsFromTestCase(DropIoClientTestCase)
     
