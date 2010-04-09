@@ -84,14 +84,15 @@ class ExpirationLengthEnum(object):
     ONE_MONTH_FROM_LAST_VIEW = '1_MONTH_FROM_LAST_VIEW'
     ONE_YEAR_FROM_LAST_VIEW = '1_YEAR_FROM_LAST_VIEW'
     
-    valid_expiration_lengths = frozenset((ONE_DAY_FROM_NOW,
-                                          ONE_WEEK_FROM_NOW,
-                                          ONE_MONTH_FROM_NOW,
-                                          ONE_YEAR_FROM_NOW,
-                                          ONE_DAY_FROM_LAST_VIEW,
-                                          ONE_WEEK_FROM_LAST_VIEW,
-                                          ONE_MONTH_FROM_LAST_VIEW,
-                                          ONE_YEAR_FROM_LAST_VIEW))
+    valid_expiration_lengths = frozenset((
+        ONE_DAY_FROM_NOW,
+        ONE_WEEK_FROM_NOW,
+        ONE_MONTH_FROM_NOW,
+        ONE_YEAR_FROM_NOW,
+        ONE_DAY_FROM_LAST_VIEW,
+        ONE_WEEK_FROM_LAST_VIEW,
+        ONE_MONTH_FROM_LAST_VIEW,
+        ONE_YEAR_FROM_LAST_VIEW))
 
 
 class _NullHandler(logging.Handler):
@@ -191,7 +192,6 @@ class DropIoClient(object):
         return body_dict
     
     def __asset_dict_to_asset(self, asset_dict):
-        # TODO: this isn't ideal...
         asset = None
         if asset_dict.has_key('contents'):
             asset = Note(asset_dict)
@@ -213,7 +213,7 @@ class DropIoClient(object):
         """
         
         params_dict = {}
-        if drop_name is not None:
+        if drop_name:
             params_dict['name'] = drop_name
         params_dict.update(self.__base_params_dict)
             
@@ -228,10 +228,10 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Drop
         """
-        assert drop_name is not None
+        assert drop_name
         
         params_dict = {}
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -259,8 +259,8 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Drop
         """
-        assert drop is not None
-        assert token is not None
+        assert drop
+        assert token
         
         params_dict = {}
         params_dict['token'] = token
@@ -279,11 +279,11 @@ class DropIoClient(object):
                 params_dict['guests_can_delete'] = _DROPIO_TRUE
             else:
                 params_dict['guests_can_delete'] = _DROPIO_FALSE
-        if drop.expiration_length is not None:
+        if drop.expiration_length:
             params_dict['expiration_length'] = drop.expiration_length
-        if drop.password is not None:
+        if drop.password:
             params_dict['password'] = drop.password
-        if drop.admin_password is not None:
+        if drop.admin_password:
             params_dict['admin_password'] = drop.admin_password
         params_dict.update(self.__base_params_dict)
         
@@ -294,8 +294,8 @@ class DropIoClient(object):
         return drop
     
     def delete_drop(self, drop_name, token):
-        assert drop_name is not None
-        assert token is not None
+        assert drop_name
+        assert token
         
         params_dict = {}
         params_dict['token'] = token
@@ -316,16 +316,16 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Link
         """
-        assert drop_name is not None
-        assert link_url is not None
+        assert drop_name
+        assert link_url
         
         params_dict = {}
         params_dict['url'] = link_url
-        if title is not None:
+        if title:
             params_dict['title'] = title
-        if description is not None:
+        if description:
             params_dict['description'] = description
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -340,14 +340,14 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Note
         """
-        assert drop_name is not None
-        assert contents is not None
+        assert drop_name
+        assert contents
         
         params_dict = {}
         params_dict['contents'] = contents
-        if title is not None:
+        if title:
             params_dict['title'] = title
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -362,15 +362,14 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Asset
         """
-        assert drop_name is not None
+        assert drop_name
         assert hasattr(readable, 'read')
         
-        if not file_name:
-            file_name = str(uuid.uuid4())
+        file_name = file_name or str(uuid.uuid4())
         
         params_dict = {}
         params_dict['drop_name'] = drop_name
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict['file'] = (file_name, readable.read())
         params_dict.update(self.__base_params_dict)
@@ -387,9 +386,9 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Asset
         """
-        assert drop_name is not None
-        assert file_name is not None
-        assert os.path.isfile(file_name) is True
+        assert drop_name
+        assert file_name
+        assert os.path.isfile(file_name)
         
         input = open(file_name, 'rb')
         asset = self.create_file_from_readable(drop_name, input, file_name, token)
@@ -402,11 +401,11 @@ class DropIoClient(object):
         Returns:
             generator of dropio.resource.Asset
         """
-        assert drop_name is not None
+        assert drop_name
         
         params_dict = {}
         params_dict['page'] = page
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -423,7 +422,7 @@ class DropIoClient(object):
         Returns:
             generator of dropio.resource.Asset
         """
-        assert drop_name is not None
+        assert drop_name
         
         page = 1
         while True:
@@ -443,11 +442,11 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Asset
         """
-        assert drop_name is not None
-        assert asset_name is not None
+        assert drop_name
+        assert asset_name
         
         params_dict = {}
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -462,19 +461,19 @@ class DropIoClient(object):
         Returns:
             dropio.resource.Asset
         """
-        assert drop_name is not None
-        assert asset is not None
+        assert drop_name
+        assert asset
         
         params_dict = {}
-        if token is not None:
+        if token:
             params_dict['token'] = token
-        if asset.title is not None:
+        if asset.title:
             params_dict['title'] = asset.title
-        if asset.description is not None:
+        if asset.description:
             params_dict['description'] = asset.description
-        if hasattr(asset, 'url') and asset.url is not None:
+        if hasattr(asset, 'url') and asset.url:
             params_dict['url'] = asset.url
-        if hasattr(asset, 'contents') and asset.contents is not None:
+        if hasattr(asset, 'contents') and asset.contents:
             params_dict['contents'] = asset.contents
         params_dict.update(self.__base_params_dict)
         
@@ -485,11 +484,11 @@ class DropIoClient(object):
         return asset
     
     def delete_asset(self, drop_name, asset_name, token=None):
-        assert drop_name is not None
-        assert asset_name is not None
+        assert drop_name
+        assert asset_name
         
         params_dict = {}
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -499,11 +498,11 @@ class DropIoClient(object):
         return
     
     def __send_asset(self, drop_name, asset_name, medium, params_dict, token=None):
-        assert drop_name is not None
-        assert asset_name is not None
+        assert drop_name
+        assert asset_name
         
         params_dict['medium'] = medium
-        if token is not None:
+        if token:
             params_dict['token'] = token
         params_dict.update(self.__base_params_dict)
         
@@ -513,7 +512,7 @@ class DropIoClient(object):
         return
     
     def send_asset_to_fax(self, drop_name, asset_name, fax_number, token=None):
-        assert fax_number is not None
+        assert fax_number
         
         params_dict = {}
         params_dict['fax_number'] = fax_number
@@ -522,7 +521,7 @@ class DropIoClient(object):
         return
         
     def send_asset_to_drop(self, drop_name, asset_name, drop_name_dest, token=None):
-        assert drop_name_dest is not None
+        assert drop_name_dest
         
         params_dict = {}
         params_dict['drop_name'] = drop_name_dest
@@ -531,11 +530,11 @@ class DropIoClient(object):
         return
         
     def send_asset_to_email(self, drop_name, asset_name, emails, message=None, token=None):
-        assert emails is not None
+        assert emails
         
         params_dict = {}
         params_dict['emails'] = emails
-        if message is not None:
+        if message:
             params_dict['message'] = message
         self.__send_asset(drop_name, asset_name, 'email', params_dict, token)
         
@@ -613,7 +612,7 @@ def main(argv=None):
                       metavar="NOTE")
     (options, unused_args) = parser.parse_args()
     
-    assert options.api_key is not None
+    assert options.api_key
     
     logger = logging.getLogger()
     logging_level = logging.WARNING - (options.verbosity * 10)
