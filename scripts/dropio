@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import sys
+
+from dropio.client import main
+
+sys.exit(main())
