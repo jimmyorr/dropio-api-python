@@ -41,36 +41,46 @@ _DROPIO_FALSE = 'false'
 
 #########################################################################
 # HTTP ERRORS: from http://dev.drop.io/rest-api-reference/response-codes/
+#
+# TODO: consider having these inherit from urllib2.HTTPError
 #########################################################################
 
-# TODO: consider having these inherit from urllib2.HTTPError
 
 class Error(Exception):
+    
     pass
+
 
 class BadRequestError(Error):
     """400 Bad Request
-    Something is wrong with the request in general (i.e. missing parameters, 
-    bad data, etc). 
+    Something is wrong with the request in general (i.e. missing parameters,
+    bad data, etc).
     """
+    
     pass
+
 
 class InternalServerError(Error):
     """500 Internal Server Error
     Something that [drop.io] did not account for has gone wrong.
     """
+    
     pass
+
 
 class ForbiddenError(Error):
     """403 Forbidden
     You did not supply a valid API token or an authorization token.
-    """ 
+    """
+    
     pass
+
 
 class ResourceNotFoundError(Error):
     """404 Not Found
     The resource requested is not found or not available.
     """
+    
     pass
 
 
@@ -97,6 +107,7 @@ class ExpirationLengthEnum(object):
 
 class _NullHandler(logging.Handler):
     """default logger does nothing"""
+    
     def emit(self, record):
         pass
 
@@ -112,46 +123,47 @@ class DropIoClient(object):
         if logger:
             self.logger = logger
         else:
-            h = _NullHandler()
+            handler = _NullHandler()
             self.logger = logging.getLogger()
-            self.logger.addHandler(h)
+            self.logger.addHandler(handler)
     
     def __get(self, base_url, params_dict):
         params = urllib.urlencode(params_dict)
-        f = urllib2.urlopen(base_url + '?' + params)
-        body_dict = json.load(f)
-        f.close()
+        stream = urllib2.urlopen(base_url + '?' + params)
+        body_dict = json.load(stream)
+        stream.close()
         return body_dict
     
     def __post(self, url, params_dict):
         params = urllib.urlencode(params_dict)
-        f = urllib2.urlopen(url, params)
-        body_dict = json.load(f)
-        f.close()
+        stream = urllib2.urlopen(url, params)
+        body_dict = json.load(stream)
+        stream.close()
         return body_dict
     
     def __post_multipart(self, url, params_dict):
+        
         def encode_multipart_formdata(params_dict):
-            BOUNDARY = mimetools.choose_boundary()
+            boundary = mimetools.choose_boundary()
             
             body = ''
             
             for key, value in params_dict.iteritems():
                 if isinstance(value, tuple):
                     filename, value = value
-                    body += '--%s\r\n' % BOUNDARY
+                    body += '--%s\r\n' % boundary
                     body += 'Content-Disposition: form-data;'
                     body += 'name="%s";' % str(key)
                     body += 'filename="%s"\r\n' % str(filename)
                     body += 'Content-Type: %s\r\n\r\n' % str(get_content_type(filename))
                     body += '%s\r\n' % str(value)
                 else:
-                    body += '--%s\r\n' % BOUNDARY
+                    body += '--%s\r\n' % boundary
                     body += 'Content-Disposition: form-data; name="%s"\r\n\r\n' % str(key)
                     body += '%s\r\n' % str(value)
             
-            body += '--%s--\r\n' % BOUNDARY
-            content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+            body += '--%s--\r\n' % boundary
+            content_type = 'multipart/form-data; boundary=%s' % boundary
         
             return body, content_type
         
@@ -162,11 +174,11 @@ class DropIoClient(object):
         headers = {'content-type': content_type}
         
         url_parts = urlsplit(url)
-        h = httplib.HTTPConnection(url_parts.netloc)
-        h.request('POST', url_parts.path, body, headers)
-        response = h.getresponse()
+        connection = httplib.HTTPConnection(url_parts.netloc)
+        connection.request('POST', url_parts.path, body, headers)
+        response = connection.getresponse()
         body_dict = json.load(response)
-        h.close()
+        connection.close()
         return body_dict
     
     def __put(self, url, params_dict):
@@ -174,9 +186,9 @@ class DropIoClient(object):
         request = urllib2.Request(url, data=json.dumps(params_dict))
         request.add_header('Content-Type', 'application/json')
         request.get_method = lambda: 'PUT'
-        f = opener.open(request)
-        body_dict = json.load(f)
-        f.close()
+        stream = opener.open(request)
+        body_dict = json.load(stream)
+        stream.close()
         opener.close()
         return body_dict
     
@@ -185,17 +197,17 @@ class DropIoClient(object):
         request = urllib2.Request(url, data=json.dumps(params_dict))
         request.add_header('Content-Type', 'application/json')
         request.get_method = lambda: 'DELETE'
-        f = opener.open(request)
-        body_dict = json.load(f)
-        f.close()
+        stream = opener.open(request)
+        body_dict = json.load(stream)
+        stream.close()
         opener.close()
         return body_dict
     
     def __asset_dict_to_asset(self, asset_dict):
         asset = None
-        if asset_dict.has_key('contents'):
+        if 'contents' in asset_dict:
             asset = Note(asset_dict)
-        elif asset_dict.has_key('url'):
+        elif 'url' in asset_dict:
             asset = Link(asset_dict)
         else:
             asset = Asset(asset_dict)
@@ -238,18 +250,18 @@ class DropIoClient(object):
         url = _API_BASE_URL + _DROPS + drop_name
         try:
             drop_dict = self.__get(url, params_dict)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError, error:
             # TODO: move this into reusable method
-            if e.code == 400:
+            if error.code == 400:
                 raise BadRequestError()
-            elif e.code == 403:
+            elif error.code == 403:
                 raise ForbiddenError()
-            if e.code == 404:
+            if error.code == 404:
                 raise ResourceNotFoundError()
-            if e.code == 500:
+            if error.code == 500:
                 raise ResourceNotFoundError()
             else:
-                raise e
+                raise error
         drop = Drop(drop_dict)
         
         return drop
@@ -390,9 +402,9 @@ class DropIoClient(object):
         assert file_name
         assert os.path.isfile(file_name)
         
-        input = open(file_name, 'rb')
-        asset = self.create_file_from_readable(drop_name, input, file_name, token)
-        input.close()
+        stream = open(file_name, 'rb')
+        asset = self.create_file_from_readable(drop_name, stream, file_name, token)
+        stream.close()
         
         return asset
     
@@ -617,9 +629,9 @@ def main(argv=None):
     logger = logging.getLogger()
     logging_level = logging.WARNING - (options.verbosity * 10)
     logger.setLevel(logging_level)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging_level)
-    logger.addHandler(ch)
+    handler = logging.StreamHandler()
+    handler.setLevel(logging_level)
+    logger.addHandler(handler)
     
     client = DropIoClient(options.api_key, logger)
     
