@@ -5,7 +5,7 @@ Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 """
 
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
-__version__ = '0.1'
+__version__ = '0.1.1'
 
 import httplib
 import logging
@@ -212,7 +212,6 @@ class DropIoClient(object):
         else:
             asset = Asset(asset_dict)
         return asset
-    
     
     ################
     # DROP RESOURCE
@@ -552,7 +551,6 @@ class DropIoClient(object):
         
         return
     
-    
     ###################
     # COMMENT RESOURCE
     ###################
@@ -602,29 +600,36 @@ def main(argv=None):
     usage = "usage: %prog [options]"
     parser = OptionParser(usage, version="%prog " + __version__)
     
+    parser.set_defaults(api_key=None,
+                        verbosity=0,
+                        drop_name=None,
+                        token=None,
+                        files_to_create=[],
+                        links_to_create=[],
+                        notes_to_create=[])
+    
     parser.add_option("-k", "--key", 
-                      action="store", dest="api_key",
+                      action="store", dest="api_key", metavar="API_KEY",
                       help="REQUIRED! get key from http://api.drop.io/")
     parser.add_option("-v", "--verbose", 
-                      action="count", dest="verbosity", default=0)
+                      action="count", dest="verbosity")
     parser.add_option("-d", "--drop_name", 
-                      action="store", dest="drop_name",
-                      metavar="DROP")
-    parser.add_option("-t", "--token",
-                      action="store", dest="token")
+                      action="store", dest="drop_name", metavar="DROP")
+    parser.add_option("-t", "--token", 
+                      action="store", dest="token", metavar="TOKEN")
     parser.add_option("-f", "--file", 
-                      action="append", dest="files_to_create", default=[],
-                      metavar="FILE",
+                      action="append", dest="files_to_create", metavar="FILE",
                       help="Use a single dash '-' to read from stdin")
-    parser.add_option("-l", "--link",
-                      action="append", dest="links_to_create", default=[],
-                      metavar="LINK")
+    parser.add_option("-l", "--link", 
+                      action="append", dest="links_to_create", metavar="LINK")
     parser.add_option("-n", "--note",
-                      action="append", dest="notes_to_create", default=[],
-                      metavar="NOTE")
+                      action="append", dest="notes_to_create", metavar="NOTE")
     (options, unused_args) = parser.parse_args()
     
-    assert options.api_key
+    if options.api_key is None:
+        print parser.expand_prog_name("%prog: --key is a required option")
+        print parser.expand_prog_name("Try `%prog --help' for more information.")
+        return 1
     
     logger = logging.getLogger()
     logging_level = logging.WARNING - (options.verbosity * 10)
@@ -637,7 +642,7 @@ def main(argv=None):
     
     try:
         drop = client.get_drop(options.drop_name, options.token)
-    except Exception: # TODO: fix diaper anti-pattern
+    except Exception:  # TODO: fix diaper anti-pattern
         drop = client.create_drop(options.drop_name)
     
     for file_to_create in options.files_to_create:
@@ -654,6 +659,8 @@ def main(argv=None):
     for note_to_create in options.notes_to_create:
         logger.info("Adding %s to drop %s" % (note_to_create, drop.name))
         client.create_note(drop.name, note_to_create, options.token)
+    
+    return 0
 
 
 if __name__ == "__main__":
