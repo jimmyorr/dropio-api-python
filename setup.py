@@ -8,7 +8,7 @@ if sys.version_info[:3] < (2, 6, 0):
 
 setup(
     name='dropio',
-    version='0.1',
+    version='0.1.1',
     description='A Python client library for the Drop.io API',
     author='Jimmy Orr',
     author_email='jimmyorr@gmail.com',
