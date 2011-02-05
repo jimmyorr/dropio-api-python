@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-""" 
+"""
 Based on http://groups.google.com/group/dropio-api/web/resource-descriptions
 """
 
 __author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
+
 
 class Resource(object):
     def __init__(self):
@@ -75,4 +76,3 @@ class Note(Asset):
         Asset.__init__(self, note_dict)
         
         self.contents = note_dict.get('contents')
-    

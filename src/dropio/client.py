@@ -19,8 +19,10 @@ import uuid
 from optparse import OptionParser
 from urlparse import urlsplit
 
-try: import json
-except ImportError: import simplejson as json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from dropio.resource import Asset, Drop, Link, Note
 
@@ -321,7 +323,7 @@ class DropIoClient(object):
     # ASSET RESOURCE
     #################
     
-    def create_link(self, drop_name, link_url, 
+    def create_link(self, drop_name, link_url,
                     title=None, description=None, token=None):
         """
         Returns:
@@ -608,19 +610,19 @@ def main(argv=None):
                         links_to_create=[],
                         notes_to_create=[])
     
-    parser.add_option("-k", "--key", 
+    parser.add_option("-k", "--key",
                       action="store", dest="api_key", metavar="API_KEY",
                       help="REQUIRED! get key from http://api.drop.io/")
-    parser.add_option("-v", "--verbose", 
+    parser.add_option("-v", "--verbose",
                       action="count", dest="verbosity")
-    parser.add_option("-d", "--drop_name", 
+    parser.add_option("-d", "--drop_name",
                       action="store", dest="drop_name", metavar="DROP")
-    parser.add_option("-t", "--token", 
+    parser.add_option("-t", "--token",
                       action="store", dest="token", metavar="TOKEN")
-    parser.add_option("-f", "--file", 
+    parser.add_option("-f", "--file",
                       action="append", dest="files_to_create", metavar="FILE",
                       help="Use a single dash '-' to read from stdin")
-    parser.add_option("-l", "--link", 
+    parser.add_option("-l", "--link",
                       action="append", dest="links_to_create", metavar="LINK")
     parser.add_option("-n", "--note",
                       action="append", dest="notes_to_create", metavar="NOTE")
