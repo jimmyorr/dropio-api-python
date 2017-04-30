@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-__author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
-
 import os
 import unittest
 import urllib2
