@@ -4,7 +4,6 @@
 Based on http://groups.google.com/group/dropio-api/web/full-api-documentation
 """
 
-__author__ = 'jimmyorr@gmail.com (Jimmy Orr)'
 __version__ = '0.1.1'
 
 import httplib
