@@ -250,7 +250,7 @@ class DropIoClient(object):
         url = _API_BASE_URL + _DROPS + drop_name
         try:
             drop_dict = self.__get(url, params_dict)
-        except urllib2.HTTPError, error:
+        except urllib2.HTTPError as error:
             # TODO: move this into reusable method
             if error.code == 400:
                 raise BadRequestError()
@@ -259,7 +259,7 @@ class DropIoClient(object):
             if error.code == 404:
                 raise ResourceNotFoundError()
             if error.code == 500:
-                raise ResourceNotFoundError()
+                raise InternalServerError()
             else:
                 raise error
         drop = Drop(drop_dict)
@@ -628,8 +628,8 @@ def main(argv=None):
     (options, unused_args) = parser.parse_args()
     
     if options.api_key is None:
-        print parser.expand_prog_name("%prog: --key is a required option")
-        print parser.expand_prog_name("Try `%prog --help' for more information.")
+        print(parser.expand_prog_name("%prog: --key is a required option"))
+        print(parser.expand_prog_name("Try `%prog --help' for more information."))
         return 1
     
     logger = logging.getLogger()
@@ -655,11 +655,11 @@ def main(argv=None):
     
     for link_to_create in options.links_to_create:
         logger.info("Adding link '%s' to drop %s" % (link_to_create, drop.name))
-        client.create_link(drop.name, link_to_create, options.token)
+        client.create_link(drop.name, link_to_create, token=options.token)
     
     for note_to_create in options.notes_to_create:
         logger.info("Adding %s to drop %s" % (note_to_create, drop.name))
-        client.create_note(drop.name, note_to_create, options.token)
+        client.create_note(drop.name, note_to_create, token=options.token)
     
     return 0
 

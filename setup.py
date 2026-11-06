@@ -11,10 +11,10 @@ setup(
     version='0.1.1',
     description='A Python client library for the Drop.io API',
     author='Jimmy Orr',
-    license='GPLv3',
+    license='Apache 2.0',
     url='https://github.com/jimmyorr/dropio-api-python',
     packages=['dropio'],
-    package_dir={'dropio':'src/dropio'},
+    package_dir={'dropio': 'src/dropio'},
     requires=required,
     scripts=['scripts/dropio']
 )

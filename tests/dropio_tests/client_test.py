@@ -177,7 +177,7 @@ class DropIoClientTestCase(unittest.TestCase):
         assets = self.client.get_all_asset_list(drop.name)
         self.assert_(assets)
         
-	assets = list(assets) 
+        assets = list(assets) 
         
         self.assert_(len(assets) == NUMBER_OF_NOTES)
     
@@ -245,4 +245,3 @@ if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(DropIoClientTestCase)
     
     unittest.TextTestRunner(verbosity=2).run(suite)
-    
